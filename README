@@ -1,501 +1,482 @@
-GIT-DEPLOY(1)         User Contributed Perl Documentation        GIT-DEPLOY(1)
-
-
-
-NNAAMMEE
-       git-deploy - automate the git steps required for a deploying code from
-       a git repository
-
-SSYYNNOOPPSSIISS
-           git deploy [deploy-options] [action [prefix]] [action-options]
-           git deploy --man
-
-           actions:
-               start|sync|finish|abort  # normal manual rollout sequence (finish is automatic if sync succeeds)
-               start|release|abort      # normal git-production env sequence
-               hotfix                   # Roll out the site with a hotfix
-               revert                   # revert site to previous rollout (interactive select)
-               show                     # show list of tags
-               show-tag                 # show the current tag (if it exists)
-               tag                      # create a tag for this commit (restricted to certain environments)
-               log                      # during a rollout show log of changes since the last rollout
-               diff                     # during a rollout show differences between previous rollout
-               status                   # show rollout status of current repository
-
-OOPPTTIIOONNSS
-       Use git-deploy --man to see complete set of options and details of use.
-
-       ----ffoorrccee Force the action, and bypass most sanity checks. Do not use
-               unless you know what you are doing.
-
-       ----vveerrbboossee
-               Emits progress information to STDERR during processing.
-
-       ----hheellpp  Print a brief help message and exits. (You are probably reading
-               what this outputs right now.)
-
-       ----mmaann   Uses perldoc/man to output far far more than you ever realized
-               there was to know about using this tool.
-
-OOTTHHEERR OOPPTTIIOONNSS
-       ----sshhooww--sstteepp
-               Print out the step log if one exists. If nothing is printed out
-               then there is no rollout underway.
-
-       ----ddaattee--ffmmtt=FORMAT
-               Perl _s_t_r_f_i_m_e_(_) format to use in datestamped tags. Defaults to
-               '%Y%m%d-%H%M'.  Please do not change this wantonly. Various
-               features of the deploy process expect to be able to parse the
-               date stamp and require it to be in more or less this format.
-
-       ----mmeessssaaggee=STRING
-               Message to use when creating a tag. Required when creating a
-               new tag. Since you cant know the name of the newly created tag
-               when writing the message you can use the special sequence %TAG
-               as a replacement.
-
-       ----sshhooww--pprreeffiixx
-               Print to STDOUT whatever prefix would be used given the current
-               arguments and then exit.  Throw an error if there would be no
-               prefix.
-
-       ----ttoo--mmaaiill=STRING
-               Address to use to send announcement mails to. Defaults to
-               'live@somewhere.com'
-
-       ----sshhooww--ddeeppllooyy--ffiillee
-               Prints to STDOUT the current deploy file if and only if the
-               commit it contains corresponds to HEAD. Otherwise prints
-               nothing. Exits immeditately afterward.
-
-       ----ddeeppllooyy--ffiillee--nnaammee
-               Set the deploy file name. If this option is not provided the
-               deploy file defaults to "./lib/.deploy" if a directory named
-               "./lib" exists, and otherwise to "./.deploy"
-
-       ----lliisstt
-       ----lliisstt--aallll
-               Instead of printing out a single tagname for the current
-               commits tag print out a verbose list of tags, sorted by the
-               date that they contain in order of most recent to oldest. The
-               output will be structured like this:
-
-                   7e25a770901c.. *tag: sheep-20080827-1419
-                   2806eb24c3c2..  tag: cows-20080827-1240
-                   d6af6e1ad6f1..  tag: goats_20080826-1458
-                   889f65216880..  tag: goats_20080826-1034
-                   90318602f8d2..  tag: cows_20080826-1005
-                   6bd340c67bdb..  tag: sheep-20080825-2245
-                   19587c195a8b..  tag: sheep-20080825-2116 -> sheep-20080825-2105
-                   19587c195a8b..  tag: sheep-20080825-2105
-
-               The first column is the abbreviated commit SHA1 (abbreviation
-               can be disabled with the "--long-digest" option), Followed by
-               either "<space><space>" or by "<space><star>". The starred
-               items correspond to HEAD. The arrow indicates that there are
-               two different tags to the same commit, and points to the oldest
-               equivalent tag. This is then followed by either 'tag:' or
-               'branch:' (depending on whether "--include-branches" is
-               invoked) and then the item name. This may then be followed by
-               space and then an arrow and then a second name, which indicates
-               that the item is a duplicate and shows the oldest displayed
-               item (undated items like branches go last in an alphabetic
-               order with some special exceptions for trunk or master).
-
-               When used with just "--list" mode, only starred items
-               corresponding to HEAD are displayed, --list-all shows unstarred
-               items that do not correspond to HEAD as well.
-
-       ----iinncclluuddee--bbrraanncchheess
-               Show information about branches as well when in "--list" mode
-
-       ----lloonngg--ddiiggeesstt
-               Show full SHA1's when in "--list" mode.
-
-       ----iiggnnoorree--oollddeerr--tthhaann=YYYYMMDD
-               Totally ignore tags which are from before this date. Defaults
-               to 20080101.
-
-               Checking *every* tag to see if it corresponds to HEAD can be
-               expensive. This options makes it possible to filter old tags by
-               date to avoid checking them when you know they wont match.
+NAME
+    git-deploy - automate the git steps required for a deploying code from a
+    git repository
+
+SYNOPSIS
+        git deploy [deploy-options] [action [prefix]] [action-options]
+        git deploy --man
+
+        actions:
+            start|sync|finish|abort  # normal manual rollout sequence (finish is automatic if sync succeeds)
+            start|release|abort      # normal git-production env sequence
+            hotfix                   # Roll out the site with a hotfix
+            revert                   # revert site to previous rollout (interactive select)
+            show                     # show list of tags
+            show-tag                 # show the current tag (if it exists)
+            tag                      # create a tag for this commit (restricted to certain environments)
+            log                      # during a rollout show log of changes since the last rollout
+            diff                     # during a rollout show differences between previous rollout
+            status                   # show rollout status of current repository
+
+OPTIONS
+    Use git-deploy --man to see complete set of options and details of use.
+
+    --force Force the action, and bypass most sanity checks. Do not use
+            unless you know what you are doing.
+
+    --verbose
+            Emits progress information to STDERR during processing.
+
+    --help  Print a brief help message and exits. (You are probably reading
+            what this outputs right now.)
+
+    --man   Uses perldoc/man to output far far more than you ever realized
+            there was to know about using this tool.
+
+OTHER OPTIONS
+    --show-step
+            Print out the step log if one exists. If nothing is printed out
+            then there is no rollout underway.
+
+    --date-fmt=FORMAT
+            Perl strfime() format to use in datestamped tags. Defaults to
+            '%Y%m%d-%H%M'. Please do not change this wantonly. Various
+            features of the deploy process expect to be able to parse the
+            date stamp and require it to be in more or less this format.
+
+    --message=STRING
+            Message to use when creating a tag. Required when creating a new
+            tag. Since you cant know the name of the newly created tag when
+            writing the message you can use the special sequence %TAG as a
+            replacement.
+
+    --show-prefix
+            Print to STDOUT whatever prefix would be used given the current
+            arguments and then exit. Throw an error if there would be no
+            prefix.
+
+    --to-mail=STRING
+            Address to use to send announcement mails to. Defaults to
+            'live@somewhere.com'
+
+    --show-deploy-file
+            Prints to STDOUT the current deploy file if and only if the
+            commit it contains corresponds to HEAD. Otherwise prints
+            nothing. Exits immeditately afterward.
+
+    --deploy-file-name
+            Set the deploy file name. If this option is not provided the
+            deploy file defaults to "./lib/.deploy" if a directory named
+            "./lib" exists, and otherwise to "./.deploy"
+
+    --list
+    --list-all
+            Instead of printing out a single tagname for the current commits
+            tag print out a verbose list of tags, sorted by the date that
+            they contain in order of most recent to oldest. The output will
+            be structured like this:
+
+                7e25a770901c.. *tag: sheep-20080827-1419
+                2806eb24c3c2..  tag: cows-20080827-1240
+                d6af6e1ad6f1..  tag: goats_20080826-1458
+                889f65216880..  tag: goats_20080826-1034
+                90318602f8d2..  tag: cows_20080826-1005
+                6bd340c67bdb..  tag: sheep-20080825-2245
+                19587c195a8b..  tag: sheep-20080825-2116 -> sheep-20080825-2105
+                19587c195a8b..  tag: sheep-20080825-2105
+
+            The first column is the abbreviated commit SHA1 (abbreviation
+            can be disabled with the "--long-digest" option), Followed by
+            either "<space><space>" or by "<space><star>". The starred items
+            correspond to HEAD. The arrow indicates that there are two
+            different tags to the same commit, and points to the oldest
+            equivalent tag. This is then followed by either 'tag:' or
+            'branch:' (depending on whether "--include-branches" is invoked)
+            and then the item name. This may then be followed by space and
+            then an arrow and then a second name, which indicates that the
+            item is a duplicate and shows the oldest displayed item (undated
+            items like branches go last in an alphabetic order with some
+            special exceptions for trunk or master).
+
+            When used with just "--list" mode, only starred items
+            corresponding to HEAD are displayed, --list-all shows unstarred
+            items that do not correspond to HEAD as well.
 
-       ----mmaakkee--ttaagg
-               Make a tag. This is the same as the "tag" action except the tag
-               will not be automatically pushed.
+    --include-branches
+            Show information about branches as well when in "--list" mode
+
+    --long-digest
+            Show full SHA1's when in "--list" mode.
 
-               NNoottee:: that you cannot use this function in/for all
-               environments.
+    --ignore-older-than=YYYYMMDD
+            Totally ignore tags which are from before this date. Defaults to
+            20080101.
 
-               If you think your environment should be allowed contact the
-               author.
+            Checking *every* tag to see if it corresponds to HEAD can be
+            expensive. This options makes it possible to filter old tags by
+            date to avoid checking them when you know they wont match.
 
-       ----nnoo--cchheecckk--cclleeaann
-               Do not check that the working directory is clean before doing
-               things.
+    --make-tag
+            Make a tag. This is the same as the "tag" action except the tag
+            will not be automatically pushed.
 
-       ----nnoo--rreemmoottee
-               Skip any actions that involve talking to a remote repository.
+            Note: that you cannot use this function in/for all environments.
 
-       ----rreemmoottee--ssiittee=STRING
-               Name of remote site to access when pushing, pulling or
-               fetching. Defaults to 'origin'.
+            If you think your environment should be allowed contact the
+            author.
 
-               Using an remote site name of 'none' is the same as using
-               --no-remote
+    --no-check-clean
+            Do not check that the working directory is clean before doing
+            things.
 
-       ----rreemmoottee--bbrraanncchh=STRING
-               Name of remote branch to access when pushing, pulling or
-               fetching. Defaults to the current branch just like git pull or
-               git push would.
+    --no-remote
+            Skip any actions that involve talking to a remote repository.
 
-   AAccttiioonnss
-       start
-           Used to start a multi step rollout procedure. Remembers (and if
-           necessary tags) start position as well as create locks to prevent
-           two people from doing a procedure at the same time. See "hotfix"
-           below for rollout out a hotfix on top of a previous rollout tag.
+    --remote-site=STRING
+            Name of remote site to access when pushing, pulling or fetching.
+            Defaults to 'origin'.
 
-       sync
-           Used to declare that the current commit is ready for sync. At some
-           point in the future this will automatically call the appropriate
-           sync command, however currently the sync is done manually as a
-           separate step.
+            Using an remote site name of 'none' is the same as using
+            --no-remote
 
-       abort
-           A command which can be used any time prior to the manual
-           syncronization step which will automatically rollback the current
-           state to the start position. Note this is NOT the way to "rollback
-           a rollout", it is the way to abort a rollout prior to its
-           completion.
+    --remote-branch=STRING
+            Name of remote branch to access when pushing, pulling or
+            fetching. Defaults to the current branch just like git pull or
+            git push would.
 
-           I.e. if someone else has started a rollout and gone away you can
-           do:
+  Actions
+    start
+        Used to start a multi step rollout procedure. Remembers (and if
+        necessary tags) start position as well as create locks to prevent
+        two people from doing a procedure at the same time. See "hotfix"
+        below for rollout out a hotfix on top of a previous rollout tag.
 
-               git-deploy --force abort
+    sync
+        Used to declare that the current commit is ready for sync. At some
+        point in the future this will automatically call the appropriate
+        sync command, however currently the sync is done manually as a
+        separate step.
 
-           And the state of the rollout machine will be reset back to what it
-           was before they ran "git-deploy start".
+    abort
+        A command which can be used any time prior to the manual
+        syncronization step which will automatically rollback the current
+        state to the start position. Note this is NOT the way to "rollback a
+        rollout", it is the way to abort a rollout prior to its completion.
 
-           Note that the "abort" command used to be called "rollback" but that
-           term lead to a lot of confusion and we are trying to avoid it going
-           forward.
+        I.e. if someone else has started a rollout and gone away you can do:
 
-       finish
-           Used to declare that the rollout session is finished, push any new
-           commits or tags, create the final emails of what changed and
-           related functions.
+            git-deploy --force abort
 
-       release
-           Used in the "two step" rollout process for boxes where there is no
-           manual syncronization step.
+        And the state of the rollout machine will be reset back to what it
+        was before they ran "git-deploy start".
 
-       tag Used in the "one step" rollout process to tag a commit and push it
-           to the remote.
+        Note that the "abort" command used to be called "rollback" but that
+        term lead to a lot of confusion and we are trying to avoid it going
+        forward.
 
-       revert
-           This is used to do an interactive "revert" of the site to a
-           previous rollout. It combines the steps "start/git reset
-           .../sync/finish" into one process, with interactive selection of
-           the commit to revert to. If sync hooks and deploy hooks are
-           provided then they will be automatically run as normal. If they
-           arent a manual sync/finish is required.
+    finish
+        Used to declare that the rollout session is finished, push any new
+        commits or tags, create the final emails of what changed and related
+        functions.
 
-       show-tag
-           Show the tag for the current commit if there is one.
+    release
+        Used in the "two step" rollout process for boxes where there is no
+        manual syncronization step.
 
-       status
-           Show the status of the deploy procedure. Can be used to check what
-           step you are on.
+    tag Used in the "one step" rollout process to tag a commit and push it
+        to the remote.
 
-       hotfix
-           Here's how you can do a hotfix rollout. I.e. when you have an
-           existing rollout tag that you want to apply a hotfix on.
+    revert
+        This is used to do an interactive "revert" of the site to a previous
+        rollout. It combines the steps "start/git reset .../sync/finish"
+        into one process, with interactive selection of the commit to revert
+        to. If sync hooks and deploy hooks are provided then they will be
+        automatically run as normal. If they arent a manual sync/finish is
+        required.
 
-           First, instead of "git-deploy start" do:
+    show-tag
+        Show the tag for the current commit if there is one.
 
-               git-deploy hotfix
+    status
+        Show the status of the deploy procedure. Can be used to check what
+        step you are on.
 
-           That'll start "git-deploy" without doing the normal "git pull"
-           operation. Then you cherry-pick your hotfix:
+    hotfix
+        Here's how you can do a hotfix rollout. I.e. when you have an
+        existing rollout tag that you want to apply a hotfix on.
 
-               git cherry-pick SHA1_OF_HOTFIX
+        First, instead of "git-deploy start" do:
 
-           Then note the sha1 of your cherry-picked commit. This is your
-           "NEW_SHA1"
+            git-deploy hotfix
 
-               git --no-pager log -1 --pretty=%H
+        That'll start "git-deploy" without doing the normal "git pull"
+        operation. Then you cherry-pick your hotfix:
 
-           Then do a:
+            git cherry-pick SHA1_OF_HOTFIX
 
-               git pull
+        Then note the sha1 of your cherry-picked commit. This is your
+        "NEW_SHA1"
 
-           Followed by:
+            git --no-pager log -1 --pretty=%H
 
-               git push
+        Then do a:
 
-           To push your hotfix to the Git server. But now you're not at what
-           you want to roll out, so do:
+            git pull
 
-               git reset --hard NEW_SHA1
-               git checkout -f
+        Followed by:
 
-           This will ensure that you are on your hotfix commit, and that any
-           git hooks are executed. You should then TEST the code. On a
-           webserver this normally involves
+            git push
 
-               prodctl restart
+        To push your hotfix to the Git server. But now you're not at what
+        you want to roll out, so do:
 
-           and then some manual testing of the relevant web site.
+            git reset --hard NEW_SHA1
+            git checkout -f
 
-           When you are satisfied that things are ok you can do execute the
-           sync:
+        This will ensure that you are on your hotfix commit, and that any
+        git hooks are executed. You should then TEST the code. On a
+        webserver this normally involves
 
-               git-deploy sync
+            prodctl restart
 
-           TTOODDOO: The last 3 pull/push/reset steps are busywork that should be
-           merged into "git-deploy sync".
+        and then some manual testing of the relevant web site.
 
-DDEESSCCRRIIPPTTIIOONN
-       ggiitt ddeeppllooyy provides tools for managing a git based roll out process.
+        When you are satisfied that things are ok you can do execute the
+        sync:
 
-       The basic idea is that the process is divided into basically three
-       stages, each one starting with the execution of this tool.
+            git-deploy sync
 
-       The steps are as follows:
+        TODO: The last 3 pull/push/reset steps are busywork that should be
+        merged into "git-deploy sync".
 
-           $ git deploy start
-             # perfom tests
-           $ git deploy sync
-             # perfom syncronization
-           $ git deploy finish
+DESCRIPTION
+    git deploy provides tools for managing a git based roll out process.
 
-       If there is a problem in general the tool will detect it, and advise
-       you of what it is and how to deal with it.
+    The basic idea is that the process is divided into basically three
+    stages, each one starting with the execution of this tool.
 
-       This will ensure that tags are created which you can roll back to, and
-       ensure that they are pushed afterwards, amongst various other things.
+    The steps are as follows:
 
-       git deploy will fetch all tags from the remote repository configured in
-       the current repository before processing. You can disable this
-       behaviour by using --no-remote which overrides all remote actions.
+        $ git deploy start
+          # perfom tests
+        $ git deploy sync
+          # perfom syncronization
+        $ git deploy finish
 
-       In the case of an unclean working directory an error message will be
-       produced and a git status will be output. Note: This includes untracked
-       files, which must be either deleted or added to the repositories
-       .gitignore (which itself must then be committed) before you can
-       proceed with using git deploy. You can disable this with --no-check.
+    If there is a problem in general the tool will detect it, and advise you
+    of what it is and how to deal with it.
 
-       Additionally git deploy contains a number of utilities for reviewing
-       the state of the repository from the point of view of the tags it
-       contains. Specifically "--list" and "--list-all" are good ways of
-       viewing the rollout history and checking what commit you are on. See
-       the documentation for these options for details
+    This will ensure that tags are created which you can roll back to, and
+    ensure that they are pushed afterwards, amongst various other things.
 
-   GGiitt PPrroodduuccttiioonn EEnnvviirroonnmmeennttss
-       Some environment use a git checkout as their working directory. In this
-       case the three step rollout is overkill. As a replacement there is a
-       simpler two step process:
+    git deploy will fetch all tags from the remote repository configured in
+    the current repository before processing. You can disable this behaviour
+    by using --no-remote which overrides all remote actions.
 
-           git-deploy start
-           git-deploy release
+    In the case of an unclean working directory an error message will be
+    produced and a git status will be output. Note: This includes untracked
+    files, which must be either deleted or added to the repositories
+    .gitignore (which itself must then be committed) before you can proceed
+    with using git deploy. You can disable this with --no-check.
 
-       If you want to abort you can say:
+    Additionally git deploy contains a number of utilities for reviewing the
+    state of the repository from the point of view of the tags it contains.
+    Specifically "--list" and "--list-all" are good ways of viewing the
+    rollout history and checking what commit you are on. See the
+    documentation for these options for details
 
-           git-deploy abort
+  Git Production Environments
+    Some environment use a git checkout as their working directory. In this
+    case the three step rollout is overkill. As a replacement there is a
+    simpler two step process:
 
-       instead. To use this option you need to configure the repository by
-       setting
+        git-deploy start
+        git-deploy release
 
-          git config deploy.can_make_tags true
+    If you want to abort you can say:
 
-   DDeeppllooyy FFiilleess
-       A deploy file consists of a set of keys and values followed by a
-       newline followed by the deployment message use to create the deployment
-       tag. For instance
+        git-deploy abort
 
-           commit: 7e25a770901c9b1eb75ad1511580a98acff4ad60
-           tag: sheep-20080827-1419
-           deploy-date: 2008-08-27 14:19:58
-           deployed-from: bountiful.farm.com
-           deployed-by: rafael
+    instead. To use this option you need to configure the repository by
+    setting
 
-           rollout of sheep
+       git config deploy.can_make_tags true
 
-           <EOF>
+  Deploy Files
+    A deploy file consists of a set of keys and values followed by a newline
+    followed by the deployment message use to create the deployment tag. For
+    instance
 
-       If new key/values are added they will always be added before the blank
-       line.
+        commit: 7e25a770901c9b1eb75ad1511580a98acff4ad60
+        tag: sheep-20080827-1419
+        deploy-date: 2008-08-27 14:19:58
+        deployed-from: bountiful.farm.com
+        deployed-by: rafael
 
-   DDeeppllooyy HHooookkss
-       At various points in the deployment process _g_i_t_-_d_e_p_l_o_y will execute
-       user-supplied deployment hooks.
+        rollout of sheep
 
-       The idea of this is to provide a mechanism by which actions and tests
-       will be automatically executed, and if necessary can prevent the
-       syncronization from occuring.
+        <EOF>
 
-       Deploy hooks can be specific at the generic level, that is for all
-       applications, and on an application specific basis.
+    If new key/values are added they will always be added before the blank
+    line.
 
-       _S_t_r_u_c_t_u_r_e _o_f _t_h_e _d_e_p_l_o_y _h_o_o_k_s
+  Deploy Hooks
+    At various points in the deployment process git-deploy will execute
+    user-supplied deployment hooks.
 
-       The pre-deploy framework is expected to reside in the
-       _$_G_I_T___W_O_R_K___D_I_R_/_d_e_p_l_o_y directory (i.e. the _d_e_p_l_o_y directory of the
-       repository that's being rolled out). This directory has the following
-       tree:
+    The idea of this is to provide a mechanism by which actions and tests
+    will be automatically executed, and if necessary can prevent the
+    syncronization from occuring.
 
-           $GIT_WORK_DIR/deploy/                   # deploy directory
-                               /apps/              # Directory per application + 'common'
-                                    /common/       # deploy scripts that apply to all apps
-                                    /$app/         # deploy scripts for a specific $app
-                               /sync/              # sync
-                                    /$app.sync
+    Deploy hooks can be specific at the generic level, that is for all
+    applications, and on an application specific basis.
 
-       The $app in _d_e_p_l_o_y_/_{_a_p_p_s_,_s_y_n_c_}_/_$_a_p_p is the server prefix that you'd see
-       in the rollout tag. E.g. aapppp for app servers, ooffffaapppp for office etc.
-       Here's a practical example of the deployment hooks that affect the
-       "offapp" environment as of _m_a_i_n_._g_i_t's "d358f48eb7":
+   Structure of the deploy hooks
+    The pre-deploy framework is expected to reside in the
+    $GIT_WORK_DIR/deploy directory (i.e. the deploy directory of the
+    repository that's being rolled out). This directory has the following
+    tree:
 
-           $ tree deploy/apps/{offapp,common}/ deploy/sync/
-           deploy/apps/offapp/
-           |-- post-pull.010_httpd_configtest.sh
-           |-- post-pull.020_restart_httpd.sh
-           |-- pre-pull.010_nobranch_rollout.sh
-           |-- pre-pull.020_check_that_we_are_in_the_load_balancer.pl
-           |-- pre-pull.021_take_us_out_of_the_load_balancer.pl
-           `-- pre-pull.022_check_that_we_are_not_in_the_load_balancer.pl -> pre-pull.020_check_that_we_are_in_the_load_balancer.pl
-           deploy/apps/common/
-           |-- pre-sync.001_setup_affiliate_symlink.pl
-           `-- pre-sync.002_check_permissions.pl
-           deploy/sync/
-           |-- offapp.sync
+        $GIT_WORK_DIR/deploy/                   # deploy directory
+                            /apps/              # Directory per application + 'common'
+                                 /common/       # deploy scripts that apply to all apps
+                                 /$app/         # deploy scripts for a specific $app
+                            /sync/              # sync
+                                 /$app.sync
 
-       All the hooks in _d_e_p_l_o_y_/_a_p_p_s are prefixed by a "phase" in which
-       "git-deploy" will execute them (e.g. "pre-pull" just before a pull).
+    The $app in deploy/{apps,sync}/$app is the server prefix that you'd see
+    in the rollout tag. E.g. A company might have multiple environments
+    which they roll out, for instance "sheep", "cows" and "goats". Here is a
+    practical example of the deployment hooks that might be used in the
+    "sheep" environment:
 
-       During these phases "git-deploy" will "glob" in all the
-       _d_e_p_l_o_y_/_a_p_p_s_/_{_c_o_m_m_o_n_,_$_a_p_p_}_/_$_p_h_a_s_e_._* hooks and execute them in "sort"
-       order, first the "common" hooks and then the $app specific hooks. Note
-       that the hooks MMUUSSTT have their executable bit set.
+        $ tree deploy/apps/{sheep,common}/ deploy/sync/
+        deploy/apps/sheep/
+        |-- post-pull.010_httpd_configtest.sh
+        |-- post-pull.020_restart_httpd.sh
+        |-- pre-pull.010_nobranch_rollout.sh
+        |-- pre-pull.020_check_that_we_are_in_the_load_balancer.pl
+        |-- pre-pull.021_take_us_out_of_the_load_balancer.pl
+        `-- pre-pull.022_check_that_we_are_not_in_the_load_balancer.pl -> pre-pull.020_check_that_we_are_in_the_load_balancer.pl
+        deploy/apps/common/
+        |-- pre-sync.001_setup_affiliate_symlink.pl
+        `-- pre-sync.002_check_permissions.pl
+        deploy/sync/
+        |-- sheep.sync
 
-       _A_v_a_i_l_a_b_l_e _p_h_a_s_e _h_o_o_k_s
+    All the hooks in deploy/apps are prefixed by a "phase" in which
+    "git-deploy" will execute them (e.g. "pre-pull" just before a pull).
 
-       Currently, these are the hooks that will be executed. These all
-       correspond to specific git-deploy actions:
+    During these phases "git-deploy" will "glob" in all the
+    deploy/apps/{common,$app}/$phase.* hooks and execute them in "sort"
+    order, first the "common" hooks and then the $app specific hooks. Note
+    that the hooks MUST have their executable bit set.
 
-       ·   pre-start
+   Available phase hooks
+    Currently, these are the hooks that will be executed. These all
+    correspond to specific git-deploy actions:
 
-           The first hook to be executed. Will be run before the deployment
-           tag is created (but obviously, after we do "git fetch").
+    *   pre-start
 
-       ·   pre-pull
+        The first hook to be executed. Will be run before the deployment tag
+        is created (but obviously, after we do "git fetch").
 
-           Executed before we update the working tree with "git pull". This is
-           where hooks that e.g. take the deployment machine out of the load
-           balancer should be executed.
+    *   pre-pull
 
-       ·   post-pull
+        Executed before we update the working tree with "git pull". This is
+        where hooks that e.g. take the deployment machine out of the load
+        balancer should be executed.
 
-           Just after the pull in the "start" phase.
+    *   post-pull
 
-       ·   pre-sync
+        Just after the pull in the "start" phase.
 
-           Just before we create the tag we're about to sync out and execute
-           the _d_e_p_l_o_y_/_s_y_n_c_/_$_a_p_p_._s_y_n_c hook.
+    *   pre-sync
 
-       ·   post-sync
+        Just before we create the tag we're about to sync out and execute
+        the deploy/sync/$app.sync hook.
 
-           After we've synced. Here you could e.g. send custom E-Mails
-           indicating that the deployment was a success.
+    *   post-sync
 
-       ·   post-rollback
+        After we've synced. Here you could e.g. send custom E-Mails
+        indicating that the deployment was a success.
 
-           Hooks executed after a rollback, either via "rollback" or "revert".
-           Most of the time you want to use "post-tree-update" hooks instead,
-           but this is useful e.g. for putting a staging server back into a
-           load balancer.
+    *   post-rollback
 
-       These hooks will be executed in one or more action, depending on some
-       general condition:
+        Hooks executed after a rollback, either via "rollback" or "revert".
+        Most of the time you want to use "post-tree-update" hooks instead,
+        but this is useful e.g. for putting a staging server back into a
+        load balancer.
 
-       ·   post-tree-update
+    These hooks will be executed in one or more action, depending on some
+    general condition:
 
-           Executed after we update the working tree to a new revisions,
-           whether that's after the "pull" in the "start" phase, after "git
-           reset --hard" in the "rollback" phase, or after a "revert".
+    *   post-tree-update
 
-           Here's where hooks that e.g. restart the webserver and run any
-           critical tests (e.g. config tests) should be run.
+        Executed after we update the working tree to a new revisions,
+        whether that's after the "pull" in the "start" phase, after "git
+        reset --hard" in the "rollback" phase, or after a "revert".
 
-           The exit code from these hooks is ignored in actions like
-           "rollback" and "revert". We don't want the abort or revert to fail
-           just because some webserver didn't restart.
+        Here's where hooks that e.g. restart the webserver and run any
+        critical tests (e.g. config tests) should be run.
 
-       _R_e_t_u_r_n _v_a_l_u_e_s
+        The exit code from these hooks is ignored in actions like "rollback"
+        and "revert". We don't want the abort or revert to fail just because
+        some webserver didn't restart.
 
-       Each script is expected to return a nonzero exit code on failure, and a
-       zero exit code on success (in other words standard unix shell return
-       semantics). Any script that "fails" will cause "git-deploy" to abort at
-       that point.
+   Return values
+    Each script is expected to return a nonzero exit code on failure, and a
+    zero exit code on success (in other words standard unix shell return
+    semantics). Any script that "fails" will cause "git-deploy" to abort at
+    that point.
 
-       More granular failure codes are planned in the future. E.g. "failed but
-       should try again", "failed but should ask the user if trying again"
-       etc. But this hasn't yet been implemented.
+    More granular failure codes are planned in the future. E.g. "failed but
+    should try again", "failed but should ask the user if trying again" etc.
+    But this hasn't yet been implemented.
 
-   SSyynncc HHooookkss
-       A special case for a hook that really should be just a regular phase
-       hook. But isn't yet because it would have required more major surgery
-       on "git-deploy" at the time phase hooks were written, as well as access
-       by the author to all deployment environments (which wasn't the case).
+  Sync Hooks
+    A special case for a hook that really should be just a regular phase
+    hook. But isn't yet because it would have required more major surgery on
+    "git-deploy" at the time phase hooks were written, as well as access by
+    the author to all deployment environments (which wasn't the case).
 
-       The only notable difference is that there is only one phase hook for
-       each $app, and it's located in _d_e_p_l_o_y_/_s_y_n_c_/_$_a_p_p_._s_y_n_c.
+    The only notable difference is that there is only one phase hook for
+    each $app, and it's located in deploy/sync/$app.sync.
 
-   TTeessttiinngg ccooddee oonn aa ssiinnggllee sseerrvveerr
-       For debugging purposes, it can be necessary to have a branch running on
-       a single server in production. Here's a sequence that can allow you to
-       do that:
+  Testing code on a single server
+    For debugging purposes, it can be necessary to have a branch running on
+    a single server in production. Here's a sequence that can allow you to
+    do that:
 
-           cd /usr/local/git_tree/main
-           git-deploy hotfix
-           lb <single host> rollout
-           git checkout <your branch>
-           deployme --hosts=<single host> --no-activate --tag=debugging-<date+time>
-           lb <single host> ok
+        cd /usr/local/git_tree/main
+        git-deploy hotfix
+        lb <single host> rollout
+        git checkout <your branch>
+        deployme --hosts=<single host> --no-activate --tag=debugging-<date+time>
+        lb <single host> ok
 
-       Check everything works ok on that host, usually logging in through ssh,
-       then restore it to its former state lb <single host> rollout
+    Check everything works ok on that host, usually logging in through ssh,
+    then restore it to its former state lb <single host> rollout
 
-           git checkout trunk
-           deployme --no-sync --host=<single host>
-           lb <single host> ok
-           git-deploy rollback
+        git checkout trunk
+        deployme --no-sync --host=<single host>
+        lb <single host> ok
+        git-deploy rollback
 
-   ccoonnffiigg ooppttiioonnss
-           deploy.block_file
-           deploy.can_make_tags
-           deploy.config_file
-           deploy.deploy_file
-           deploy.hook_dir
-           deploy.mail_tool            ( "/usr/sbin/sendmail -f" )
-           deploy.restrict_umask
-           deploy.send_mail_on_ACTION
-           deploy.support_email
-           deploy.tag_prefix
-           user.name                   (Mandatory)
-           user.email                  (Mandatory)
+  config options
+        deploy.block_file
+        deploy.can_make_tags
+        deploy.config_file
+        deploy.deploy_file
+        deploy.hook_dir
+        deploy.mail_tool            ( "/usr/sbin/sendmail -f" )
+        deploy.restrict_umask
+        deploy.send_mail_on_ACTION
+        deploy.support_email
+        deploy.tag_prefix
+        user.name                   (Mandatory)
+        user.email                  (Mandatory)
 
-       Future thoughts: use gitconfig to replace most of the other config or
-       environment vars.
+    Future thoughts: use gitconfig to replace most of the other config or
+    environment vars.
 
-PPOODD EERRRROORRSS
-       Hey! TThhee aabboovvee ddooccuummeenntt hhaadd ssoommee ccooddiinngg eerrrroorrss,, wwhhiicchh aarree eexxppllaaiinneedd
-       bbeellooww::
-
-       Around line 1397:
-           You forgot a '=back' before '=head3'
-
-
-
-perl v5.10.1                      2011-11-06                     GIT-DEPLOY(1)

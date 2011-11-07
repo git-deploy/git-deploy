@@ -53,7 +53,7 @@ sub send_email_with_sendmail {
     my $to_mail = delete $args{to_mail} || die "Need to_mail =>";
     my $subject = delete $args{subject} || die "Need subject =>";
     my $body    = delete $args{body}    || die "Need body =>";
-    
+
     my $handle;
     my $sendmail= get_config("mail_tool","/usr/sbin/sendmail -f");
     my $from_name= get_config("user.name");
@@ -68,7 +68,7 @@ sub send_email_with_sendmail {
         open $handle, "| $cmd"
             or _die "Failed to open pipe to $cmd: $!\n";
     }
-    
+
     my $mail= join "", "To: $to_mail\n", "From: $from_name <$from_email>\n", "Subject: $subject\n",
         "\n$body\n\n\n";
     _info $mail if $DEBUG;
@@ -563,7 +563,7 @@ if ( $list || $show_tag ) {
 }
 
 if (!$force and (!get_config("user.name","") or !get_config("user.email",""))) {
-    _die  "Please make sure you execute:\n\n" 
+    _die  "Please make sure you execute:\n\n"
         . "    git config --global user.name 'Your Name'"
         . "    git config --global user.email 'email\@host.com'"
         . "before you use this tool";
@@ -1305,13 +1305,12 @@ tree:
                              /$app.sync
 
 The C<$app> in F<deploy/{apps,sync}/$app> is the server prefix that
-you'd see in the rollout tag. E.g. B<app> for app servers, B<offapp>
-for office etc. Here's a practical example of the deployment hooks
-that affect the C<offapp> environment as of F<main.git>'s
-C<d358f48eb7>:
+you'd see in the rollout tag. E.g. A company might have multiple environments
+which they roll out, for instance "sheep", "cows" and "goats". Here is a practical
+example of the deployment hooks that might be used in the C<sheep> environment:
 
-    $ tree deploy/apps/{offapp,common}/ deploy/sync/
-    deploy/apps/offapp/
+    $ tree deploy/apps/{sheep,common}/ deploy/sync/
+    deploy/apps/sheep/
     |-- post-pull.010_httpd_configtest.sh
     |-- post-pull.020_restart_httpd.sh
     |-- pre-pull.010_nobranch_rollout.sh
@@ -1322,7 +1321,7 @@ C<d358f48eb7>:
     |-- pre-sync.001_setup_affiliate_symlink.pl
     `-- pre-sync.002_check_permissions.pl
     deploy/sync/
-    |-- offapp.sync
+    |-- sheep.sync
 
 All the hooks in F<deploy/apps> are prefixed by a C<phase> in which
 C<git-deploy> will execute them (e.g. C<pre-pull> just before a
@@ -1392,7 +1391,7 @@ The exit code from these hooks is ignored in actions like C<rollback>
 and C<revert>. We don't want the abort or revert to fail just
 because some webserver didn't restart.
 
-=cut
+=back
 
 =head3 Return values
 
@@ -1444,10 +1443,10 @@ restore it to its former state lb <single host> rollout
     deploy.deploy_file
     deploy.hook_dir
     deploy.mail_tool            ( "/usr/sbin/sendmail -f" )
-    deploy.restrict_umask       
+    deploy.restrict_umask
     deploy.send_mail_on_ACTION
     deploy.support_email
-    deploy.tag_prefix           
+    deploy.tag_prefix
     user.name                   (Mandatory)
     user.email                  (Mandatory)
 
