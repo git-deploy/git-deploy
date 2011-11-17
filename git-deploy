@@ -13,7 +13,7 @@ git-deploy - automate the git steps required for a deploying code from a git rep
 use Getopt::Long qw(GetOptions);
 use Pod::Usage qw(pod2usage);
 use Cwd qw(cwd abs_path);
-
+use Time::HiRes;
 our $GIT_DEPLOY_LIB;
 
 BEGIN {
@@ -302,6 +302,7 @@ sub _checktag {
 ###################################################################################
 # main routine -- read options and do stuff
 ###################################################################################
+my @real_argv = (@ARGV);
 my $list_all= 0;
 my $check_clean= 1;
 my $use_remote= 1;
@@ -454,6 +455,10 @@ $list_count= 20 if !defined $list_count;
 ###################################################################################
 # Handle --show and --list style options. This precludes any type of rollout step
 # from occuring.
+
+my @timings = ();
+my $write_timings = 0;
+push @timings, ["gdt_start", Time::HiRes::time()];
 
 # read the rollback tag files from disk.
 my $rollback_tag= fetch_tag_info( 'rollback' );
@@ -618,9 +623,11 @@ while (@actions) {
     my ( $subject, $body );
     my $start_time= time;
     _info "Starting step '$action' at ", strftime("%Y-%m-%d %H-%M-%S",localtime($start_time)),"\n";
+    push @timings, ["gdt_action_$action", Time::HiRes::time()];
 
 ######################################################
     if ( $action eq 'start' or $action eq 'revert' or $action eq 'hotfix' ) {
+        $write_timings = 1;
         write_rollout_status(
             "start", $force,
             sub {
@@ -713,7 +720,7 @@ while (@actions) {
 ######################################################
     }
     elsif ( $action eq 'sync' or $action eq 'release' ) {
-
+        $write_timings = 1;
         write_rollout_status(
             $action, $force,
             sub {
@@ -809,6 +816,7 @@ while (@actions) {
 ######################################################
     }
     elsif ( $action eq 'rollback' ) {
+        $write_timings = 1;
 
         # this will die if there is a problem
         write_rollout_status(
@@ -930,7 +938,17 @@ while (@actions) {
 }
 
 # and push any tags that might have been created
+push @timings, ["gdt_push_tags", Time::HiRes::time()];
 push_tags( $remote_site );
+push @timings, ["gdt_end", Time::HiRes::time()];
+if($write_timings) {
+    open my $fd, '>', "/var/log/deploy/timing_gdt-" . $timings[0]->[1] . ".txt";
+    print $fd "# $0 " . join(' ', @real_argv) . "\n";
+    for my $timing (@timings) {
+        print $fd $timing->[0] . " " . $timing->[1] . "\n";
+    }
+    close $fd;
+}
 
 exit(0);
 
