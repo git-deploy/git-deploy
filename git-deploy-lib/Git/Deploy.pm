@@ -1376,10 +1376,18 @@ sub execute_deploy_hooks {
 
     my $root= get_hook_dir( $prefix )
         or return;
+
+    local $ENV{GIT_DEPLOYTOOL_PHASE}  = $phase;
+    local $ENV{GIT_DEPLOY_PHASE}      = $phase;
+
     # the common 'app' is executed for everyone
+    local $ENV{GIT_DEPLOYTOOL_HOOK_PREFIX} = 'common';
+    local $ENV{GIT_DEPLOY_HOOK_PREFIX}     = 'common';
     process_deploy_hooks( $root, "common", $phase, $ignore_exit_code );
 
     # and then the 'app' specific stuff as determined by $prefix
+    local $ENV{GIT_DEPLOYTOOL_HOOK_PREFIX} = $prefix;
+    local $ENV{GIT_DEPLOY_HOOK_PREFIX}     = $prefix;
     process_deploy_hooks( $root, $prefix, $phase, $ignore_exit_code );
 }
 
