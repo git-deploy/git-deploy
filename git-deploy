@@ -370,6 +370,7 @@ my %legal_action= (
     start    => 'start',
     begin    => 'start',
     sync     => 'sync',
+    'manual-sync' => 'manual-sync',
     finish   => 'finish',
     finnish  => 'finnish',
     end      => 'finish',
@@ -774,7 +775,7 @@ while (@actions) {
         # by request of liz and the teamleaders.
 ######################################################
     }
-    elsif ( $action eq 'sync' or $action eq 'release' ) {
+    elsif ( $action eq 'sync' or $action eq 'release' or $action eq 'manual-sync' ) {
         $write_timings = 1;
         write_rollout_status(
             $action, $force,
@@ -835,7 +836,8 @@ while (@actions) {
 
         #XXX: we want a mail here. as it's a pretty useful mail.
 
-        if ( my $sync_hook= get_sync_hook( $prefix ) ) {
+        if ( $action ne 'manual-sync' and my $sync_hook= get_sync_hook( $prefix ) ) {
+
             _info "A sync hook has been defined for this server!\n",
                   "Will use '$sync_hook' to synchronize code to remote servers\n",
                   "If the synchronization completes successfully then your rollout\n",
@@ -1174,9 +1176,8 @@ tag.
 
 =item sync
 
-Used to declare that the current commit is ready for sync. At some point in the future
-this will automatically call the appropriate sync command, however currently the sync
-is done manually as a separate step.
+Used to declare that the current commit is ready for sync. This will automatically call
+the appropriate sync command for this app, as defined in F<deploy/sync/$app.sync>.
 
 =item abort
 
@@ -1269,6 +1270,12 @@ When you are satisfied that things are ok you can do execute the sync:
 B<TODO>: The last 3 pull/push/reset steps are busywork that should be
 merged into C<git-deploy sync>.
 
+=item manual-sync
+
+Declares the current commit is ready for sync, but will drop the user back into the shell
+to execute the sync manually. It is then up to the user to execute the finish action when
+they have deemed the roll out to be synced.
+
 =back
 
 
@@ -1281,11 +1288,11 @@ starting with the execution of this tool.
 
 The steps are as follows:
 
-    $ git deploy start
-      # perform tests
-    $ git deploy sync
-      # perform synchronization
-    $ git deploy finish
+    $ git-deploy start
+      # perfom tests
+    $ git-deploy sync
+      # perfom syncronization
+    $ git-deploy finish
 
 If there is a problem in general the tool will detect it, and advise you of what it is and
 how to deal with it.
@@ -1477,7 +1484,11 @@ hooks were written, as well as access by the author to all deployment
 environments (which wasn't the case).
 
 The only notable difference is that there is only one phase hook for
-each C<$app>, and it's located in F<deploy/sync/$app.sync>.
+each C<$app>, and it's located in F<deploy-$repo/sync/$app.sync>.
+
+Note: the sync hook can be skipped (and the associated finish) with the
+manual-sync action. This will however execute the pre-sync and post-sync
+hooks, possibly with errors.
 
 =head2 Testing code on a single server
 
