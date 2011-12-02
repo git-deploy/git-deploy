@@ -1153,7 +1153,7 @@ BEGIN {
                 if ( @file == 1 ) {
                     $somethings_wrong->("It looks like maybe you havent synced yet");
                 }
-                elsif ( @file == 2 and $file[1] !~ /^(sync|release):/ ) {
+                elsif ( @file == 2 and $file[1] !~ /^(sync|release|manual-sync):/ ) {
                     $somethings_wrong->("Can't $status in the current state:");
                 }
             }
