@@ -1161,7 +1161,7 @@ BEGIN {
                 $somethings_wrong->("git-deploy ole saatavilla suomeksi! (maybe you meant 'finish' instead?)");
             }
             if ( $status eq 'rollback' ) {
-                if ( @file == 2 and $file[1] !~ /^(sync|release):/ ) {
+                if ( @file == 2 and $file[1] !~ /^(sync|release|manual-sync):/ ) {
                     $somethings_wrong->("Can't $status in the current state:");
                 }
             }
