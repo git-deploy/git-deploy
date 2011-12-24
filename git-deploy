@@ -1013,7 +1013,7 @@ Address to use to send announcement mails to. Defaults to 'live@somewhere.com'
 =item B<--show-deploy-file>
 
 Prints to STDOUT the current deploy file if and only if the commit it contains
-corresponds to HEAD. Otherwise prints nothing. Exits immeditately afterward.
+corresponds to HEAD. Otherwise prints nothing. Exits immediately afterwards.
 
 =item B<--deploy-file-name>
 
@@ -1116,7 +1116,7 @@ is done manually as a separate step.
 
 =item abort
 
-A command which can be used any time prior to the manual syncronization step which will
+A command which can be used any time prior to the manual synchronization step which will
 automatically rollback the current state to the start position. Note this is NOT the way
 to "rollback a rollout", it is the way to abort a rollout prior to its completion.
 
@@ -1137,7 +1137,7 @@ the final emails of what changed and related functions.
 
 =item release
 
-Used in the "two step" rollout process for boxes where there is no manual syncronization step.
+Used in the "two step" rollout process for boxes where there is no manual synchronization step.
 
 =item tag
 
@@ -1148,7 +1148,7 @@ Used in the "one step" rollout process to tag a commit and push it to the remote
 This is used to do an interactive "revert" of the site to a previous rollout. It combines
 the steps "start/git reset .../sync/finish" into one process, with interactive selection
 of the commit to revert to. If sync hooks and deploy hooks are provided then they will be
-automatically run as normal. If they arent a manual sync/finish is required.
+automatically run as normal. If they aren't a manual sync/finish is required.
 
 =item show-tag
 
@@ -1218,9 +1218,9 @@ starting with the execution of this tool.
 The steps are as follows:
 
     $ git deploy start
-      # perfom tests
+      # perform tests
     $ git deploy sync
-      # perfom syncronization
+      # perform synchronization
     $ git deploy finish
 
 If there is a problem in general the tool will detect it, and advise you of what it is and
@@ -1285,7 +1285,7 @@ execute user-supplied deployment hooks.
 
 The idea of this is to provide a mechanism by which actions and tests
 will be automatically executed, and if necessary can prevent the
-syncronization from occuring.
+synchronization from occurring.
 
 Deploy hooks can be specific at the generic level, that is for all
 applications, and on an application specific basis.
