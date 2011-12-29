@@ -45,22 +45,57 @@ sub get_to_mail {
     return $to_mail;
 }
 
-our @timings = ();
-our $write_timings = 0;
+our (@timings, $write_timings, @real_argv);
+BEGIN {
+    # @timings is a set of 4-tuples: [ $tag, $time_stamp, $time_since_last_step, $time_since_start_tag ]
+    @timings= (
+            [
+                'gdt_start',  # tagname
+                $^T,                  # process start time (set by Perl at perl startup)
+                -1,                   # time since last step (-1 == Not Applicable)
+                -1,                   # time since start tag - only relevant on _end tags (-1 == Not Applicable)
+            ]
+    );
+    # if this is true then we will write a timings file at process conclusion
+    $write_timings= 0;
+    @real_argv= @ARGV;
+}
 
 sub push_timings {
     my $tag= shift;
-    push @timings, [$tag, Time::HiRes::time()];
+    my $time= Time::HiRes::time();
+    my $elapsed= -1;
+    if ($tag=~/_end\z/) {
+        (my $start= $tag)=~s/_end\z/_start/;
+        foreach my $timing (@timings) {
+            next unless $timing->[0] eq $start;
+            $elapsed= $time - $timing->[1];
+            last;
+        }
+    }
+    push @timings, [ $tag, $time, $time - $timings[-1][1], $elapsed ];
 }
 
 sub write_timings {
     return unless $write_timings;
-    open my $fh, '>', "/var/log/deploy/timing_gdt-" . $timings[0]->[1] . ".txt";
-    print $fh "# $0 " . join(' ', @real_argv) . "\n";
+    my $timing_file= "/var/log/deploy/timing_gdt-$timings[0][1].txt";
+    open my $fh, '>', $timing_file
+        or do {
+            warn "Not writing timing data: failed to open timing file '$timing_file': $!";
+            return;
+        };
+    print $fh "# $0 @real_argv\n";
     for my $timing (@timings) {
         print $fh "@$timing\n";
     }
     close $fh;
+}
+
+END {
+    # We will execute this at process termination so long as we dont exit via POSIX::_exit(),
+    # which we don't/shouldn't use. This guarantees that we write stuff out no matter how we terminate.
+    push_timings("gdt_end");
+    write_timings();
 }
 
 # Send an E-Mail, early in the file so I can debug subroutines that
@@ -103,6 +138,8 @@ sub send_email_with_sendmail {
 sub do_pre_checks {
     my ($prefix,$action)= @_;
 
+    push_timings("gdt_internal__do_pre_checks__start");
+
     # make sure they arent trying to do this from their home dir
     my $cwd= cwd();
     if ( $cwd !~ m!^/usr/local/! and $prefix !~ /debug/) {
@@ -137,11 +174,13 @@ sub do_pre_checks {
                 "and then rerun the original command\n";
         }
     }
+    push_timings("gdt_internal__do_pre_checks__end");
 }
 
 
 sub do_get_name_list {
     my ( $ignore_older_than, $list, $list_all, $include_branches )= @_;
+    push_timings("gdt_internal__do_get_name_list__start");
     ###################################################################################
     # find matching tags
     my $start_time= time;
@@ -165,6 +204,7 @@ sub do_get_name_list {
         if !$list_all;
     $elapsed= time - $start_time;
     _info "filter_names_matching_head() took $elapsed seconds\n" if $DEBUG;
+    push_timings("gdt_internal__do_get_name_list__end");
     return \@head_refs;
 }
 
@@ -321,7 +361,6 @@ sub _checktag {
 ###################################################################################
 # main routine -- read options and do stuff
 ###################################################################################
-my @real_argv = (@ARGV);
 my $list_all= 0;
 my $check_clean= 1;
 my $use_remote= 1;
@@ -474,8 +513,6 @@ $list_count= 20 if !defined $list_count;
 ###################################################################################
 # Handle --show and --list style options. This precludes any type of rollout step
 # from occuring.
-
-push_timings("gdt_start");
 
 # read the rollback tag files from disk.
 my $rollback_tag= fetch_tag_info( 'rollback' );
@@ -957,8 +994,6 @@ while (@actions) {
 # and push any tags that might have been created
 push_timings("gdt_push_tags");
 push_tags( $remote_site );
-push_timings("gdt_end");
-write_timings();
 
 exit(0);
 
