@@ -63,6 +63,7 @@ BEGIN {
 
 sub push_timings {
     my $tag= shift;
+    $tag =~ s/[^a-zA-Z0-9_]+/_/g; # strip any bogosity from the tag
     my $time= Time::HiRes::time();
     my $elapsed= -1;
     if ($tag=~/_end\z/) {
