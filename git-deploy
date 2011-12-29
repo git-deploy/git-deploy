@@ -45,6 +45,24 @@ sub get_to_mail {
     return $to_mail;
 }
 
+our @timings = ();
+our $write_timings = 0;
+
+sub push_timings {
+    my $tag= shift;
+    push @timings, [$tag, Time::HiRes::time()];
+}
+
+sub write_timings {
+    return unless $write_timings;
+    open my $fh, '>', "/var/log/deploy/timing_gdt-" . $timings[0]->[1] . ".txt";
+    print $fh "# $0 " . join(' ', @real_argv) . "\n";
+    for my $timing (@timings) {
+        print $fh "@$timing\n";
+    }
+    close $fh;
+}
+
 # Send an E-Mail, early in the file so I can debug subroutines that
 # use this with BEGIN blocks.
 sub send_email_with_sendmail {
@@ -84,6 +102,7 @@ sub send_email_with_sendmail {
 
 sub do_pre_checks {
     my ($prefix,$action)= @_;
+
     # make sure they arent trying to do this from their home dir
     my $cwd= cwd();
     if ( $cwd !~ m!^/usr/local/! and $prefix !~ /debug/) {
@@ -456,9 +475,7 @@ $list_count= 20 if !defined $list_count;
 # Handle --show and --list style options. This precludes any type of rollout step
 # from occuring.
 
-my @timings = ();
-my $write_timings = 0;
-push @timings, ["gdt_start", Time::HiRes::time()];
+push_timings("gdt_start");
 
 # read the rollback tag files from disk.
 my $rollback_tag= fetch_tag_info( 'rollback' );
@@ -623,7 +640,7 @@ while (@actions) {
     my ( $subject, $body );
     my $start_time= time;
     _info "Starting step '$action' at ", strftime("%Y-%m-%d %H-%M-%S",localtime($start_time)),"\n";
-    push @timings, ["gdt_action_$action", Time::HiRes::time()];
+    push_timings("gdt_action_$action");
 
 ######################################################
     if ( $action eq 'start' or $action eq 'revert' or $action eq 'hotfix' ) {
@@ -938,17 +955,10 @@ while (@actions) {
 }
 
 # and push any tags that might have been created
-push @timings, ["gdt_push_tags", Time::HiRes::time()];
+push_timings("gdt_push_tags");
 push_tags( $remote_site );
-push @timings, ["gdt_end", Time::HiRes::time()];
-if($write_timings) {
-    open my $fd, '>', "/var/log/deploy/timing_gdt-" . $timings[0]->[1] . ".txt";
-    print $fd "# $0 " . join(' ', @real_argv) . "\n";
-    for my $timing (@timings) {
-        print $fd $timing->[0] . " " . $timing->[1] . "\n";
-    }
-    close $fd;
-}
+push_timings("gdt_end");
+write_timings();
 
 exit(0);
 
