@@ -85,9 +85,9 @@ sub write_timings {
             warn "Not writing timing data: failed to open timing file '$timing_file': $!";
             return;
         };
-    print $fh "# $0 @real_argv\n";
+    print $fh "# ". join("\t",$0,@real_argv),"\n";
     for my $timing (@timings) {
-        print $fh "@$timing\n";
+        print $fh join("\t",@$timing),"\n";
     }
     close $fh;
 }
