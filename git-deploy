@@ -1010,8 +1010,9 @@ __END__
     actions:
         start|sync|finish|abort  # normal manual rollout sequence (finish is automatic if sync succeeds)
         start|release|abort      # normal git-production env sequence
-        hotfix                   # Roll out the site with a hotfix
-        revert                   # revert site to previous rollout (interactive select)
+        hotfix                   # Roll out the site with a hotfix (replaces start)
+        revert                   # revert site to previous rollout (interactive - replaces start)
+        manual-sync              # manual sync process (replaces sync - can be used for a gradual sync)
         show                     # show list of tags
         show-tag                 # show the current tag (if it exists)
         tag                      # create a tag for this commit (restricted to certain environments)
