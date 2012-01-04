@@ -1492,23 +1492,44 @@ hooks, possibly with errors.
 
 =head2 Testing code on a single server
 
-For debugging purposes, it can be necessary to have a branch running on a
-single server in production. Here's a sequence that can allow you to do that:
+For debugging purposes, it can be necessary to have a branch running
+on a single server in production. Here's a sequence that can allow you
+to do that while still creating the appropriate tags and E-Mails.
 
     cd /usr/local/git_tree/main
     git-deploy hotfix
-    lb <single host> rollout
-    git checkout <your branch>
-    deployme --hosts=<single host> --no-activate --tag=debugging-<date+time>
-    lb <single host> ok
+    git reset --hard <commit you want to test>
+    git-deploy manual-sync
+    deployme --host=bc48app-0{1..4}
+    git-deploy finish
 
-Check everything works ok on that host, usually logging in through ssh, then
-restore it to its former state lb <single host> rollout
+If you then want to take these boxes out of the lb because they've
+been naughty (e.g. spewing errors):
 
-    git checkout trunk
-    deployme --no-sync --host=<single host>
-    lb <single host> ok
-    git-deploy rollback
+    lb --reason="throwing errors" bc48app-0{1..4} maintenance
+
+At which point you might want to test another commit. So you could
+repeat the steps above except with C<--no-activate> supplied to
+C<deployme>:
+
+    deployme --no-activate --host=bc48app-0{1..4}
+
+Followed by popping them back in the lb:
+
+    lb --no-rollout bc48app-0{1..4} ok
+
+To stop screwing around with the host you can either manually put it
+on the old tag with deployme. Find what that tag is with C<deployme
+active_tags> (it'll be the one most boxes are on):
+
+    deployme active_tag
+
+And then activate that tag:
+
+    deployme --no-sync --host=bc48app-0{1..4} --tag=<THAT TAG>
+
+Or simply use C<git-deploy revert> to revert the whole cluster to
+that tag. Note that this will reboot all the machines though.
 
 =head2 config options
 
