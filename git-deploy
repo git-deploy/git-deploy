@@ -238,7 +238,7 @@ sub do_interactive_revert {
     } while !$input;
     _tell("Will revert code to tag $printed[$input-1]");
     $$rsubject= "Reverting $prefix from $printed[0] to $printed[$input-1]";
-    $$rmessage= "$ENV{USER} has instructured git-deploy to begin an automated revert of $prefix.\n\n"
+    $$rmessage= "$ENV{USER} has instructed git-deploy to begin an automated revert of $prefix.\n\n"
               . "The live tag that we are reverting from is: $printed[0]\n\n"
               . "We will revert to the code previously rolled out as tag $printed[$input-1]\n\n"
               . "NOTE that a new tag will be generated for the code when it is synchronzied.\n\n";
