@@ -13,7 +13,7 @@ git-deploy - automate the git steps required for a deploying code from a git rep
 use Getopt::Long qw(GetOptions);
 use Pod::Usage qw(pod2usage);
 use Cwd qw(cwd abs_path);
-
+use Time::HiRes;
 our $GIT_DEPLOY_LIB;
 
 BEGIN {
@@ -43,6 +43,60 @@ sub get_to_mail {
     $to_mail ||= get_config("send_mail_on_$action","none");
     $to_mail="" if $to_mail and $to_mail eq 'silent' or $to_mail eq 'none';
     return $to_mail;
+}
+
+our (@timings, $write_timings, @real_argv);
+BEGIN {
+    # @timings is a set of 4-tuples: [ $tag, $time_stamp, $time_since_last_step, $time_since_start_tag ]
+    @timings= (
+            [
+                'gdt_start',  # tagname
+                $^T,                  # process start time (set by Perl at perl startup)
+                -1,                   # time since last step (-1 == Not Applicable)
+                -1,                   # time since start tag - only relevant on _end tags (-1 == Not Applicable)
+            ]
+    );
+    # if this is true then we will write a timings file at process conclusion
+    $write_timings= 0;
+    @real_argv= @ARGV;
+}
+
+sub push_timings {
+    my $tag= shift;
+    $tag =~ s/[^a-zA-Z0-9_]+/_/g; # strip any bogosity from the tag
+    my $time= Time::HiRes::time();
+    my $elapsed= -1;
+    if ($tag=~/_end\z/) {
+        (my $start= $tag)=~s/_end\z/_start/;
+        foreach my $timing (@timings) {
+            next unless $timing->[0] eq $start;
+            $elapsed= $time - $timing->[1];
+            last;
+        }
+    }
+    push @timings, [ $tag, $time, $time - $timings[-1][1], $elapsed ];
+}
+
+sub write_timings {
+    return unless $write_timings;
+    my $timing_file= "/var/log/deploy/timing_gdt-$timings[0][1].txt";
+    open my $fh, '>', $timing_file
+        or do {
+            warn "Not writing timing data: failed to open timing file '$timing_file': $!";
+            return;
+        };
+    print $fh "# ". join("\t",$0,@real_argv),"\n";
+    for my $timing (@timings) {
+        print $fh join("\t",@$timing),"\n";
+    }
+    close $fh;
+}
+
+END {
+    # We will execute this at process termination so long as we dont exit via POSIX::_exit(),
+    # which we don't/shouldn't use. This guarantees that we write stuff out no matter how we terminate.
+    push_timings("gdt_end");
+    write_timings();
 }
 
 # Send an E-Mail, early in the file so I can debug subroutines that
@@ -84,6 +138,9 @@ sub send_email_with_sendmail {
 
 sub do_pre_checks {
     my ($prefix,$action)= @_;
+
+    push_timings("gdt_internal__do_pre_checks__start");
+
     # make sure they arent trying to do this from their home dir
     my $cwd= cwd();
     if ( $cwd !~ m!^/usr/local/! and $prefix !~ /debug/) {
@@ -118,11 +175,13 @@ sub do_pre_checks {
                 "and then rerun the original command\n";
         }
     }
+    push_timings("gdt_internal__do_pre_checks__end");
 }
 
 
 sub do_get_name_list {
     my ( $ignore_older_than, $list, $list_all, $include_branches )= @_;
+    push_timings("gdt_internal__do_get_name_list__start");
     ###################################################################################
     # find matching tags
     my $start_time= time;
@@ -146,6 +205,7 @@ sub do_get_name_list {
         if !$list_all;
     $elapsed= time - $start_time;
     _info "filter_names_matching_head() took $elapsed seconds\n" if $DEBUG;
+    push_timings("gdt_internal__do_get_name_list__end");
     return \@head_refs;
 }
 
@@ -178,7 +238,7 @@ sub do_interactive_revert {
     } while !$input;
     _tell("Will revert code to tag $printed[$input-1]");
     $$rsubject= "Reverting $prefix from $printed[0] to $printed[$input-1]";
-    $$rmessage= "$ENV{USER} has instructured git-deploy to begin an automated revert of $prefix.\n\n"
+    $$rmessage= "$ENV{USER} has instructed git-deploy to begin an automated revert of $prefix.\n\n"
               . "The live tag that we are reverting from is: $printed[0]\n\n"
               . "We will revert to the code previously rolled out as tag $printed[$input-1]\n\n"
               . "NOTE that a new tag will be generated for the code when it is synchronzied.\n\n";
@@ -310,6 +370,7 @@ my %legal_action= (
     start    => 'start',
     begin    => 'start',
     sync     => 'sync',
+    'manual-sync' => 'manual-sync',
     finish   => 'finish',
     finnish  => 'finnish',
     end      => 'finish',
@@ -618,9 +679,11 @@ while (@actions) {
     my ( $subject, $body );
     my $start_time= time;
     _info "Starting step '$action' at ", strftime("%Y-%m-%d %H-%M-%S",localtime($start_time)),"\n";
+    push_timings("gdt_action_$action");
 
 ######################################################
     if ( $action eq 'start' or $action eq 'revert' or $action eq 'hotfix' ) {
+        $write_timings = 1;
         write_rollout_status(
             "start", $force,
             sub {
@@ -712,8 +775,8 @@ while (@actions) {
         # by request of liz and the teamleaders.
 ######################################################
     }
-    elsif ( $action eq 'sync' or $action eq 'release' ) {
-
+    elsif ( $action eq 'sync' or $action eq 'release' or $action eq 'manual-sync' ) {
+        $write_timings = 1;
         write_rollout_status(
             $action, $force,
             sub {
@@ -773,7 +836,8 @@ while (@actions) {
 
         #XXX: we want a mail here. as it's a pretty useful mail.
 
-        if ( my $sync_hook= get_sync_hook( $prefix ) ) {
+        if ( $action ne 'manual-sync' and my $sync_hook= get_sync_hook( $prefix ) ) {
+
             _info "A sync hook has been defined for this server!\n",
                   "Will use '$sync_hook' to synchronize code to remote servers\n",
                   "If the synchronization completes successfully then your rollout\n",
@@ -809,6 +873,7 @@ while (@actions) {
 ######################################################
     }
     elsif ( $action eq 'rollback' ) {
+        $write_timings = 1;
 
         # this will die if there is a problem
         write_rollout_status(
@@ -930,6 +995,7 @@ while (@actions) {
 }
 
 # and push any tags that might have been created
+push_timings("gdt_push_tags");
 push_tags( $remote_site );
 
 exit(0);
@@ -944,8 +1010,9 @@ __END__
     actions:
         start|sync|finish|abort  # normal manual rollout sequence (finish is automatic if sync succeeds)
         start|release|abort      # normal git-production env sequence
-        hotfix                   # Roll out the site with a hotfix
-        revert                   # revert site to previous rollout (interactive select)
+        hotfix                   # Roll out the site with a hotfix (replaces start)
+        revert                   # revert site to previous rollout (interactive - replaces start)
+        manual-sync              # manual sync process (replaces sync - can be used for a gradual sync)
         show                     # show list of tags
         show-tag                 # show the current tag (if it exists)
         tag                      # create a tag for this commit (restricted to certain environments)
@@ -1110,9 +1177,8 @@ tag.
 
 =item sync
 
-Used to declare that the current commit is ready for sync. At some point in the future
-this will automatically call the appropriate sync command, however currently the sync
-is done manually as a separate step.
+Used to declare that the current commit is ready for sync. This will automatically call
+the appropriate sync command for this app, as defined in F<deploy/sync/$app.sync>.
 
 =item abort
 
@@ -1205,6 +1271,12 @@ When you are satisfied that things are ok you can do execute the sync:
 B<TODO>: The last 3 pull/push/reset steps are busywork that should be
 merged into C<git-deploy sync>.
 
+=item manual-sync
+
+Declares the current commit is ready for sync, but will drop the user back into the shell
+to execute the sync manually. It is then up to the user to execute the finish action when
+they have deemed the roll out to be synced.
+
 =back
 
 
@@ -1217,11 +1289,11 @@ starting with the execution of this tool.
 
 The steps are as follows:
 
-    $ git deploy start
-      # perform tests
-    $ git deploy sync
-      # perform synchronization
-    $ git deploy finish
+    $ git-deploy start
+      # perfom tests
+    $ git-deploy sync
+      # perfom syncronization
+    $ git-deploy finish
 
 If there is a problem in general the tool will detect it, and advise you of what it is and
 how to deal with it.
@@ -1413,27 +1485,52 @@ hooks were written, as well as access by the author to all deployment
 environments (which wasn't the case).
 
 The only notable difference is that there is only one phase hook for
-each C<$app>, and it's located in F<deploy/sync/$app.sync>.
+each C<$app>, and it's located in F<deploy-$repo/sync/$app.sync>.
+
+Note: the sync hook can be skipped (and the associated finish) with the
+manual-sync action. This will however execute the pre-sync and post-sync
+hooks, possibly with errors.
 
 =head2 Testing code on a single server
 
-For debugging purposes, it can be necessary to have a branch running on a
-single server in production. Here's a sequence that can allow you to do that:
+For debugging purposes, it can be necessary to have a branch running
+on a single server in production. Here's a sequence that can allow you
+to do that while still creating the appropriate tags and E-Mails.
 
     cd /usr/local/git_tree/main
     git-deploy hotfix
-    lb <single host> rollout
-    git checkout <your branch>
-    deployme --hosts=<single host> --no-activate --tag=debugging-<date+time>
-    lb <single host> ok
+    git reset --hard <commit you want to test>
+    git-deploy manual-sync
+    deployme --host=bc48app-0{1..4}
+    git-deploy finish
 
-Check everything works ok on that host, usually logging in through ssh, then
-restore it to its former state lb <single host> rollout
+If you then want to take these boxes out of the lb because they've
+been naughty (e.g. spewing errors):
 
-    git checkout trunk
-    deployme --no-sync --host=<single host>
-    lb <single host> ok
-    git-deploy rollback
+    lb --reason="throwing errors" bc48app-0{1..4} maintenance
+
+At which point you might want to test another commit. So you could
+repeat the steps above except with C<--no-activate> supplied to
+C<deployme>:
+
+    deployme --no-activate --host=bc48app-0{1..4}
+
+Followed by popping them back in the lb:
+
+    lb --no-rollout bc48app-0{1..4} ok
+
+To stop screwing around with the host you can either manually put it
+on the old tag with deployme. Find what that tag is with C<deployme
+active_tags> (it'll be the one most boxes are on):
+
+    deployme active_tag
+
+And then activate that tag:
+
+    deployme --no-sync --host=bc48app-0{1..4} --tag=<THAT TAG>
+
+Or simply use C<git-deploy revert> to revert the whole cluster to
+that tag. Note that this will reboot all the machines though.
 
 =head2 config options
 

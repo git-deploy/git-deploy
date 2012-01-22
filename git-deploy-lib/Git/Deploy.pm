@@ -270,8 +270,10 @@ sub git_errcode {
         _info "reading tag and branch info - this might take a second or two.\n"
             if $DEBUG;
 
+        push_timings("gdt_internal__get_ref_info__git_for_each_ref__start");
         my $start_time= time;
         my $generated_code= `git for-each-ref --format '$gfer_format'`;
+        push_timings("gdt_internal__get_ref_info__git_for_each_ref__end");
 
         my $elapsed= time - $start_time;
         _info "git for-each-ref took $elapsed seconds\n" if $DEBUG;
@@ -281,8 +283,9 @@ sub git_errcode {
             _die "No refs were returned from git for-each-ref (which shouldn't be possible)\n";
         }
 
-        _info "evalling result\n" if $DEBUG;
+        _info "processing result\n" if $DEBUG;
         $start_time= time;
+        push_timings("gdt_internal__get_ref_info__process_ref_info__start");
 
         my %ref;
         my %commit;
@@ -391,9 +394,10 @@ sub git_errcode {
             $ref{ $ref_data{category} }{ $ref_data{type} }{ $ref_data{barename} }= \%ref_data;
             push @{ $commit{$commitname}{refs} }, $typename;
         }
+        push_timings("gdt_internal__get_ref_info__process_ref_info__end");
 
         $elapsed= time - $start_time;
-        _info "evaling tag data took $elapsed seconds\n", "returning from ref_info\n"
+        _info "processing ref data took $elapsed seconds\n", "returning from ref_info\n"
             if $DEBUG;
         $ref_info_loaded= 1;
         return $ref_info= { refs => \%ref, commit => \%commit };
@@ -632,7 +636,9 @@ sub find_refs_matching_head {
 # verify that the working directory is clean. If it is not clean returns the status output.
 # if it is clean returns nothing.
 sub check_if_working_dir_is_clean {
+    push_timings("gdt_internal__git_status__start");
     my $status= `git status`;
+    push_timings("gdt_internal__git_status__end");
     return if $status =~ /\(working directory clean\)/;
     return $status;
 }
@@ -701,6 +707,7 @@ sub make_dated_tag {
 # preform an action against a remote site.
 sub remote {
     my ( $action, $remote_site, $remote_branch )= @_;
+    push_timings("gdt_internal__remote__action_${action}__start");
     if ( !$remote_site ) {
         _info "Note: not performing $action, as it is disabled\n";
     }
@@ -726,6 +733,7 @@ sub remote {
     _die "failed to git $action from '$name' errorcode: $error\n$cmd\n$res\n"
         if $error;
     _info "$res", "\n" if $VERBOSE and $res;
+    push_timings("gdt_internal__remote__action_${action}__end");
 }
 
 # fetch tags from a remote site
@@ -1145,7 +1153,7 @@ BEGIN {
                 if ( @file == 1 ) {
                     $somethings_wrong->("It looks like maybe you havent synced yet");
                 }
-                elsif ( @file == 2 and $file[1] !~ /^(sync|release):/ ) {
+                elsif ( @file == 2 and $file[1] !~ /^(sync|release|manual-sync):/ ) {
                     $somethings_wrong->("Can't $status in the current state:");
                 }
             }
@@ -1153,7 +1161,7 @@ BEGIN {
                 $somethings_wrong->("git-deploy ole saatavilla suomeksi! (maybe you meant 'finish' instead?)");
             }
             if ( $status eq 'rollback' ) {
-                if ( @file == 2 and $file[1] !~ /^(sync|release):/ ) {
+                if ( @file == 2 and $file[1] !~ /^(sync|release|manual-sync):/ ) {
                     $somethings_wrong->("Can't $status in the current state:");
                 }
             }
@@ -1211,6 +1219,7 @@ BEGIN {
 
 sub check_for_unpushed_commits {
     my ( $remote_site, $remote_branch, $force )= @_;
+    push_timings("gdt_internal__check_for_unpushed_commits__start");
     $remote_branch ||= get_current_branch();
 
     #print "git cherry $remote_site/$remote_branch\n";# if $DEBUG;
@@ -1232,6 +1241,7 @@ sub check_for_unpushed_commits {
             print `git log -1 $sha1`;
         }
     }
+    push_timings("gdt_internal__check_for_unpushed_commits__end");
     _die "Will not proceed.\n" if @cherry and !$force;
     return 0;
 }
@@ -1240,6 +1250,7 @@ sub check_for_unpushed_commits {
 sub rollback_to_name {
     my ( $name, $prefix )= @_;
     my ($rbinfo)= parse_rollout_status();
+    push_timings("gdt_internal__rollback_to_name__start");
     my @cmd;
     my $cur_branch= get_current_branch();
     if ( $rbinfo->{branch} ne $cur_branch ) {
@@ -1269,6 +1280,7 @@ sub rollback_to_name {
         ignore_exit_code => 1,
     ) for qw(post-tree-update post-rollback);
 
+    push_timings("gdt_internal__rollback_to_name__end");
     return;
 }
 
@@ -1321,6 +1333,10 @@ sub get_sync_hook { return get_hook( "sync", @_ ) }
 
 sub execute_hook {
     my ($cmd, $ignore_exit_code)= @_;
+
+    my ($file)= $cmd =~ m/([^\/]+)$/;
+
+    push_timings("gdt_internal__execute_hook__${file}__start");
     system("$cmd 2>&1");
     if ( $? == -1 ) {
         my $msg = "failed to execute '$cmd': $!\n";
@@ -1334,6 +1350,7 @@ sub execute_hook {
         my $msg = sprintf "error: '$cmd' exited with value %d\n", $? >> 8;
         $ignore_exit_code ? _warn $msg : _die $msg;
     }
+    push_timings("gdt_internal__execute_hook__${file}__end");
     return 1;
 }
 
@@ -1353,8 +1370,8 @@ sub process_deploy_hooks {
         _info "Found ", 0 + @checks, " '$phase' hooks to execute in '$appdir'\n" if $DEBUG;
     }
 
+    push_timings("gdt_internal__process_deploy_hooks__phase_${phase}__start");
     foreach my $spec (@checks) {
-        my ($file)= $spec =~ m/[^\/]+$/;
         my $cmd= "";
         unless ( -x $spec ) {
             _warn "Deploy hook '$spec' is not executable! IGNORING!\n";
@@ -1364,6 +1381,7 @@ sub process_deploy_hooks {
         _info "Executing $phase hook: $cmd";
         execute_hook($cmd, $ignore_exit_code);
     }
+    push_timings("gdt_internal__process_deploy_hooks__phase_${phase}__end");
     _info "All '$phase' checks for '$appname' were successful\n" if $DEBUG;
 }
 
@@ -1376,10 +1394,18 @@ sub execute_deploy_hooks {
 
     my $root= get_hook_dir( $prefix )
         or return;
+
+    local $ENV{GIT_DEPLOYTOOL_PHASE}  = $phase;
+    local $ENV{GIT_DEPLOY_PHASE}      = $phase;
+
     # the common 'app' is executed for everyone
+    local $ENV{GIT_DEPLOYTOOL_HOOK_PREFIX} = 'common';
+    local $ENV{GIT_DEPLOY_HOOK_PREFIX}     = 'common';
     process_deploy_hooks( $root, "common", $phase, $ignore_exit_code );
 
     # and then the 'app' specific stuff as determined by $prefix
+    local $ENV{GIT_DEPLOYTOOL_HOOK_PREFIX} = $prefix;
+    local $ENV{GIT_DEPLOY_HOOK_PREFIX}     = $prefix;
     process_deploy_hooks( $root, $prefix, $phase, $ignore_exit_code );
 }
 
