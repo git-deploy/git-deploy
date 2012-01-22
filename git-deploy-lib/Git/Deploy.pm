@@ -11,6 +11,7 @@ use Sys::Hostname qw(hostname);
 use Fcntl qw(:DEFAULT :flock);
 use Cwd qw(cwd abs_path);
 use File::Spec::Functions qw(catdir);
+use Git::Deploy::Timing qw(push_timings);
 use Git::Deploy::Say;
 
 our $VERSION= "0.001";
