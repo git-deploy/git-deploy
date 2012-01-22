@@ -145,14 +145,14 @@ my $config_file;
 # if $setting does not contain a period it will become "$config_prefix.$setting"
 # if $setting _starts_ with a period it will become "$config_prefix.$setting" as well.
 # $opts is any additional arguments to feed to git-config
-# Note that if the setting "$config_prefix.config_file" is set then we will always
+# Note that if the setting "$config_prefix.config-file" is set then we will always
 # check it first when looking up values that start with $config_prefix (others we wont bother).
 
 sub _get_config {
     if (!defined $config_file) {
-        # on first run we check to see if there is a deploy.config_file specified
+        # on first run we check to see if there is a deploy.config-file specified
         $config_file= ""; # prevent infinite loops
-        $config_file= _get_config("path","$config_prefix.config_file",""); # and now we read this from the normal configs
+        $config_file= _get_config("--path","$config_prefix.config-file",""); # and now we read this from the normal configs
     }
     my $opts= shift;
     my $setting= shift;
@@ -889,7 +889,7 @@ sub print_refs {
 
 sub get_deploy_file_name {
     my ($file)= @_;
-    $file ||= get_config("deploy_file",".deploy");
+    $file ||= get_config("deploy-file",".deploy");
     return $file;
 }
 
@@ -1108,7 +1108,7 @@ BEGIN {
             };
 
         if ( $status eq 'start' ) {
-            my $sysadmin_lock= get_config_path('block_file','');
+            my $sysadmin_lock= get_config_path('block-file','');
             if ($sysadmin_lock and -e $sysadmin_lock) {
                 my $msg= _slurp($sysadmin_lock);
                 _die "Sysadmin rollout lockfile '$sysadmin_lock' is preventing this rollout\n"

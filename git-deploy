@@ -40,7 +40,7 @@ use Data::Dumper qw(Dumper);
 
 sub get_to_mail {
     my ($action, $to_mail)= @_;
-    $to_mail ||= get_config("send_mail_on_$action","none");
+    $to_mail ||= get_config("send-mail-on-$action","none");
     $to_mail="" if $to_mail and $to_mail eq 'silent' or $to_mail eq 'none';
     return $to_mail;
 }
@@ -109,7 +109,7 @@ sub send_email_with_sendmail {
     my $body    = delete $args{body}    || die "Need body =>";
 
     my $handle;
-    my $sendmail= get_config("mail_tool","/usr/sbin/sendmail -f");
+    my $sendmail= get_config("mail-tool","/usr/sbin/sendmail -f");
     my $from_name= get_config("user.name");
     my $from_email= get_config("user.email");
 
@@ -280,7 +280,7 @@ sub do_sync_with_sync_hook {
 
         1;
     } or do {
-        my $support_email= get_config('support_email','maintainer');
+        my $support_email= get_config('support-email','maintainer');
         _tell
             "The syncronization hook has returned failure: $@\n\n",
             "                         *** DON'T PANIC ***\n\n",
@@ -491,7 +491,7 @@ init_gitdir();
 
 
 # Don't let users invoke us with a wrong umask
-if (defined(my $require= get_config_int("restrict_umask",undef))) {
+if (defined(my $require= get_config_int("restrict-umask",undef))) {
     my $umask= umask;
     if ( $umask != $require ) {
         _die sprintf( "Your umask is not set properly; got %04o instead of %04o\n", $umask, $require);
@@ -504,7 +504,7 @@ if (defined(my $require= get_config_int("restrict_umask",undef))) {
 $VERBOSE++ if $action;
 $list= 1   if !$action;
 
-$prefix ||= get_config('tag_prefix','');
+$prefix ||= get_config('tag-prefix','');
 $to_mail= 'silent'
     if $prefix =~ /debug-deploy/i;
 $remote_site= "none"
@@ -598,7 +598,7 @@ if (@ARGV) {
 if ( !$prefix ) {
     _die "It appears you have not specified a tag prefix and it is not configured either.\n"
         . "You can use:\n\n"
-        . "    git config deploy.tag_prefix PREFIX\n\n"
+        . "    git config deploy.tag-prefix PREFIX\n\n"
         . "to configure this repository for deployment, or provide one on the command line.\n";
 }
 
@@ -637,7 +637,7 @@ if ($check_clean) {
 
 if ( $make_tag or $action eq 'tag' ) {
     _die "You aren't allowed to make tags for the prefix '$prefix'"
-        unless get_config_bool("can_make_tags",'false');
+        unless get_config_bool("can-make-tags",'false');
     if ( !@message and $action eq 'tag' ) {
         if ( $prefix =~ /^(\w+?)_?prt$/ ) {
             push @message, "\U$1\E Production Readyness Test Release";
@@ -668,7 +668,7 @@ my $host= hostname();
 my @actions= ($action);
 if ( $action eq 'release' ) {
     _die "You arent allowed to use the 'release' action for the prefix '$prefix'"
-        unless get_config_bool("can_make_tags",'false');
+        unless get_config_bool("can-make-tags",'false');
     push @actions, "finish";
 }
 while (@actions) {
@@ -1330,7 +1330,7 @@ If you want to abort you can say:
 
 instead. To use this option you need to configure the repository by setting
 
-   git config deploy.can_make_tags true
+   git config deploy.can-make-tags true
 
 =head2 Deploy Files
 
@@ -1534,16 +1534,16 @@ that tag. Note that this will reboot all the machines though.
 
 =head2 config options
 
-    deploy.block_file
-    deploy.can_make_tags
-    deploy.config_file
-    deploy.deploy_file
+    deploy.block-file
+    deploy.can-make-tags
+    deploy.config-file
+    deploy.deploy-file
     deploy.hook_dir
-    deploy.mail_tool            ( "/usr/sbin/sendmail -f" )
-    deploy.restrict_umask
-    deploy.send_mail_on_ACTION
-    deploy.support_email
-    deploy.tag_prefix
+    deploy.mail-tool            ( "/usr/sbin/sendmail -f" )
+    deploy.restrict-umask
+    deploy.send-mail-on-ACTION
+    deploy.support-email
+    deploy.tag-prefix
     user.name                   (Mandatory)
     user.email                  (Mandatory)
 
