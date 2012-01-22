@@ -1482,23 +1482,84 @@ And then activate that tag:
 Or simply use C<git-deploy revert> to revert the whole cluster to
 that tag. Note that this will reboot all the machines though.
 
-=head2 config options
+=head2 Config options
 
-    deploy.block-file
-    deploy.can-make-tags
-    deploy.config-file
-    deploy.deploy-file
-    deploy.hook_dir
-    deploy.mail-tool            ( "/usr/sbin/sendmail -f" )
-    deploy.restrict-umask
-    deploy.send-mail-on-ACTION
-    deploy.support-email
-    deploy.tag-prefix
-    user.name                   (Mandatory)
-    user.email                  (Mandatory)
+These are L<git(1)> config options that need to be set, see
+L<git-config(1)> for details:
 
-Future thoughts: use gitconfig to replace most of the other config or environment
-vars.
+=over
+
+=item * C<user.name>
+
+=item * C<user.email>
+
+=back
+
+And these are L<git-deploy(1)>-specific options:
+
+=over
+
+=item * C<deploy.block-file>
+
+A path to a file which if existent will block rollouts,
+e.g. F</etc/ROLLOUTS_BLOCKED>
+
+=item * C<deploy.can-make-tags>
+
+Can this environment make tags manually with C<git-deploy tag>? Used
+for special purposes, you probably don't need this.
+
+=item * C<deploy.config-file>
+
+The C<git-deploy> config file, set this to e.g. C</etc/git-deploy.ini>
+in C</etc/gitconfig> on the deployment box to have C<git-deploy> read
+that config file.
+
+We'll read the config file with C<git config --file> so you can
+B<also> put stuff in C</etc/gitconfig>, C<.git/config> or any other
+file Git normally reads.
+
+=item * C<deploy.deploy-file>
+
+This is a file we write out to the directory being deployed before the
+C<sync> step to indicate what tag we've deployed, who deployed it
+etc. See L</Deploy Files> for details.
+
+This is F<.deploy> by default, but you can also set it to
+e.g. F<lib/.deploy> in environments where only the lib/ directory is
+synced out.
+
+=item * C<deploy.hook-dir>
+
+What directory do we look for our hooks in? See L</Deploy Hooks> for
+details.
+
+=item * C<deploy.tag-prefix>
+
+A prefix we'll add to your tags, set to e.g. C<cron> for your cron
+deployes, C<app> for your main web application. C<debug> is something
+you can use to test the tool.
+
+=item * C<deploy.support-email>
+
+An E-Mail address we'll tell the user to contact if something goes
+horribly wrong.
+
+=item * C<deploy.mail-tool>
+
+The tool we use to send mail. C</usr/sbin/sendmail -f> by default.
+
+=item * C<deploy.restrict-umask>
+
+Force the user to have a given umask before they can invoke us.
+
+=item * C<deploy.send-mail-on-ACTION>
+
+A boolean option that configures when we send
+mail. E.g. C<deploy.send-mail-on-start = true> will have mail sent
+when we do "start".
+
+=back
 
 =cut
 
