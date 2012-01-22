@@ -153,7 +153,8 @@ sub _die(@) {
     # very bad
     my $msg= _msg( "# FATAL:", @_ );
     __log($msg);
-    die colored [COLOR_DIE], $msg;
+    print STDERR colored [COLOR_DIE], $msg;
+    exit 1;
 }
 
 sub _error(@) {
