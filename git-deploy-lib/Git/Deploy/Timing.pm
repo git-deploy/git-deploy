@@ -47,7 +47,13 @@ sub push_timings {
 
 sub write_timings {
     return unless $write_timings;
-    my $timing_file= "/var/log/deploy/timing_gdt-$timings[0][1].txt";
+    # Do we even have to write the timing data?
+    require Git::Deploy;
+    return unless Git::Deploy::get_config_bool("log-timing-data",'false');
+    # Where do we write it?
+    return unless my $log_directory = Git::Deploy::log_directory();
+
+    my $timing_file= "$log_directory/timing_gdt-$timings[0][1].txt";
     open my $fh, '>', $timing_file
         or do {
             warn "Not writing timing data: failed to open timing file '$timing_file': $!";

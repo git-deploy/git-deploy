@@ -73,6 +73,7 @@ our @EXPORT= qw(
 
     _slurp
     init_gitdir
+    log_directory
 
 );
 
@@ -1408,6 +1409,12 @@ sub execute_deploy_hooks {
     local $ENV{GIT_DEPLOYTOOL_HOOK_PREFIX} = $prefix;
     local $ENV{GIT_DEPLOY_HOOK_PREFIX}     = $prefix;
     process_deploy_hooks( $root, $prefix, $phase, $ignore_exit_code );
+}
+
+sub log_directory {
+    my $log_directory = get_config_path("log-directory", '');
+    return unless $log_directory
+    return $log_directory;
 }
 
 1;
