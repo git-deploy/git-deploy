@@ -1,0 +1,3 @@
+*.pm    diff=perl
+*.pl    diff=perl
+*.t     diff=perl
