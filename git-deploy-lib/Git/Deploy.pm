@@ -1293,7 +1293,7 @@ sub rollback_to_name {
         my ( $prefix )= @_;
         return $root if defined $root;
 
-        $root = get_config_path('hook_dir',undef);
+        $root = get_config_path('hook-dir',undef);
 
         if ($SKIP_HOOKS) {
             $root= "";
