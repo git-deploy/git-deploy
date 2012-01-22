@@ -13,7 +13,6 @@ git-deploy - automate the git steps required for a deploying code from a git rep
 use Getopt::Long qw(GetOptions);
 use Pod::Usage qw(pod2usage);
 use Cwd qw(cwd abs_path);
-use Time::HiRes;
 our $GIT_DEPLOY_LIB;
 
 BEGIN {

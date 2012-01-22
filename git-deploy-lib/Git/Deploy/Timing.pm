@@ -2,6 +2,7 @@ package Git::Deploy::Timing;
 use strict;
 use warnings FATAL => "all";
 use Exporter 'import';
+use Time::HiRes;
 
 our @EXPORT = qw(
     push_timings
