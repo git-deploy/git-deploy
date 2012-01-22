@@ -109,7 +109,8 @@ sub get_log_handle {
 
 sub __log {
     my $str= join("",@_);
-    my $pfx= sprintf "# %-12s | %s #",$ENV{USER},strftime("%Y-%m-%d %H:%M:%S",localtime);
+    my $user = $ENV{USER} || ((getpwuid($<))[0]);
+    my $pfx= sprintf "# %-12s | %s #",$user,strftime("%Y-%m-%d %H:%M:%S",localtime);
     $str=~s/\033\[[^m]+m//g;          # strip color
     $str=~s/^#([^:]+):/$pfx $1:/mg; # fix prefix
     $str=~s/\n*\z/\n/;
