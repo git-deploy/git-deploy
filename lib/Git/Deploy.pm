@@ -197,7 +197,7 @@ sub _get_config {
         if ($setting=~/^\Q$config_prefix\E\./ and $repo_name) {
             my $repo_name_setting = $setting;
             $repo_name_setting =~ s/^\Q$config_prefix\E\./${config_prefix}-repo-$repo_name./;
-            push @setting_internal_name => $repo_name_setting;
+            unshift @setting_internal_name => $repo_name_setting;
         }
         SETTING_NAME: for my $setting_internal_name (@setting_internal_name) {
               my $last = $setting_internal_name eq $setting_internal_name[-1];
@@ -225,6 +225,8 @@ sub _get_config {
                       _die "Got unexpected error code $error_code from $cmd: $res";
                   }
                   $config{$setting}{$opts}= $res;
+
+                  last SETTING_NAME if !$error_code and $res;
                   last CONF_SOURCE;
               }
           }
