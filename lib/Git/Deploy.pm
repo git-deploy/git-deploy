@@ -38,7 +38,6 @@ our @EXPORT= qw(
     get_config_int
     get_config_path
     get_config_bool
-    get_config_as_hoh
     get_current_branch
     get_deploy_file_name
     get_ref_info
@@ -199,29 +198,6 @@ sub _get_config {
         }
     }
     return $config{$setting}{$opts};
-}
-
-sub get_config_as_hoh {
-    my ($file)= shift;
-    if ($file) {
-        $file= "--file $file" 
-    } else {
-        $file= "";
-    }
-    my ($res,$error_code)= git_cmd("git config $file --list -z");
-    my %conf;
-    foreach my $tuple (split /\0/,$res) {
-        my ($option,$value)= split /\n/, $tuple, 2;
-        my $node= \%conf;
-        my @paths= split /\./, $option;
-        my $leaf= pop @paths;
-        foreach my $field (@paths) {
-            $node->{$field}||={};
-            $node= $node->{$field};
-        }
-        $node->{$leaf}= $value;
-    }
-    return \%conf;   
 }
 
 sub get_config { return _get_config("",@_) }
