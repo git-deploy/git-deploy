@@ -16,11 +16,19 @@ use Cwd qw(cwd abs_path);
 use Sys::Hostname qw(hostname);
 use POSIX qw(strftime);
 use FindBin ();
+use File::Basename qw(dirname);
 use File::Spec::Functions qw(catdir);
 our $GIT_DEPLOY_LIB;
 
 BEGIN {
-    $GIT_DEPLOY_LIB = catdir(abs_path($FindBin::Bin), 'lib');
+    my $path_to_gd = abs_path($0);
+    if (-l $path_to_gd) {
+        # If we have a symlink in /usr/local/bin we have to resolve it
+        # and then find the library dir.
+        $path_to_gd = readlink $path_to_gd;
+    }
+    my $git_deploy_dir = dirname($path_to_gd);
+    $GIT_DEPLOY_LIB = catdir($git_deploy_dir, 'lib');
 
     # we set this up so that it's always in PERL5LIB when hooks execute
     $ENV{PERL5LIB} .= ":" if $ENV{PERL5LIB};
