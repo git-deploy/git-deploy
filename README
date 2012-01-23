@@ -9,8 +9,9 @@ SYNOPSIS
         actions:
             start|sync|finish|abort  # normal manual rollout sequence (finish is automatic if sync succeeds)
             start|release|abort      # normal git-production env sequence
-            hotfix                   # Roll out the site with a hotfix
-            revert                   # revert site to previous rollout (interactive select)
+            hotfix                   # Roll out the site with a hotfix (replaces start)
+            revert                   # revert site to previous rollout (interactive - replaces start)
+            manual-sync              # manual sync process (replaces sync - can be used for a gradual sync)
             show                     # show list of tags
             show-tag                 # show the current tag (if it exists)
             tag                      # create a tag for this commit (restricted to certain environments)
@@ -62,7 +63,7 @@ OTHER OPTIONS
     --show-deploy-file
             Prints to STDOUT the current deploy file if and only if the
             commit it contains corresponds to HEAD. Otherwise prints
-            nothing. Exits immeditately afterward.
+            nothing. Exits immediately afterwards.
 
     --deploy-file-name
             Set the deploy file name. If this option is not provided the
@@ -152,14 +153,13 @@ OTHER OPTIONS
         below for rollout out a hotfix on top of a previous rollout tag.
 
     sync
-        Used to declare that the current commit is ready for sync. At some
-        point in the future this will automatically call the appropriate
-        sync command, however currently the sync is done manually as a
-        separate step.
+        Used to declare that the current commit is ready for sync. This will
+        automatically call the appropriate sync command for this app, as
+        defined in deploy/sync/$app.sync.
 
     abort
         A command which can be used any time prior to the manual
-        syncronization step which will automatically rollback the current
+        synchronization step which will automatically rollback the current
         state to the start position. Note this is NOT the way to "rollback a
         rollout", it is the way to abort a rollout prior to its completion.
 
@@ -181,7 +181,7 @@ OTHER OPTIONS
 
     release
         Used in the "two step" rollout process for boxes where there is no
-        manual syncronization step.
+        manual synchronization step.
 
     tag Used in the "one step" rollout process to tag a commit and push it
         to the remote.
@@ -191,7 +191,7 @@ OTHER OPTIONS
         rollout. It combines the steps "start/git reset .../sync/finish"
         into one process, with interactive selection of the commit to revert
         to. If sync hooks and deploy hooks are provided then they will be
-        automatically run as normal. If they arent a manual sync/finish is
+        automatically run as normal. If they aren't a manual sync/finish is
         required.
 
     show-tag
@@ -249,6 +249,12 @@ OTHER OPTIONS
         TODO: The last 3 pull/push/reset steps are busywork that should be
         merged into "git-deploy sync".
 
+    manual-sync
+        Declares the current commit is ready for sync, but will drop the
+        user back into the shell to execute the sync manually. It is then up
+        to the user to execute the finish action when they have deemed the
+        roll out to be synced.
+
 DESCRIPTION
     git deploy provides tools for managing a git based roll out process.
 
@@ -257,11 +263,11 @@ DESCRIPTION
 
     The steps are as follows:
 
-        $ git deploy start
+        $ git-deploy start
           # perfom tests
-        $ git deploy sync
+        $ git-deploy sync
           # perfom syncronization
-        $ git deploy finish
+        $ git-deploy finish
 
     If there is a problem in general the tool will detect it, and advise you
     of what it is and how to deal with it.
@@ -300,7 +306,7 @@ DESCRIPTION
     instead. To use this option you need to configure the repository by
     setting
 
-       git config deploy.can_make_tags true
+       git config deploy.can-make-tags true
 
   Deploy Files
     A deploy file consists of a set of keys and values followed by a newline
@@ -326,7 +332,7 @@ DESCRIPTION
 
     The idea of this is to provide a mechanism by which actions and tests
     will be automatically executed, and if necessary can prevent the
-    syncronization from occuring.
+    synchronization from occurring.
 
     Deploy hooks can be specific at the generic level, that is for all
     applications, and on an application specific basis.
@@ -441,42 +447,124 @@ DESCRIPTION
     the author to all deployment environments (which wasn't the case).
 
     The only notable difference is that there is only one phase hook for
-    each $app, and it's located in deploy/sync/$app.sync.
+    each $app, and it's located in deploy-$repo/sync/$app.sync.
+
+    Note: the sync hook can be skipped (and the associated finish) with the
+    manual-sync action. This will however execute the pre-sync and post-sync
+    hooks, possibly with errors.
 
   Testing code on a single server
     For debugging purposes, it can be necessary to have a branch running on
     a single server in production. Here's a sequence that can allow you to
-    do that:
+    do that while still creating the appropriate tags and E-Mails.
 
         cd /usr/local/git_tree/main
         git-deploy hotfix
-        lb <single host> rollout
-        git checkout <your branch>
-        deployme --hosts=<single host> --no-activate --tag=debugging-<date+time>
-        lb <single host> ok
+        git reset --hard <commit you want to test>
+        git-deploy manual-sync
+        deployme --host=bc48app-0{1..4}
+        git-deploy finish
 
-    Check everything works ok on that host, usually logging in through ssh,
-    then restore it to its former state lb <single host> rollout
+    If you then want to take these boxes out of the lb because they've been
+    naughty (e.g. spewing errors):
 
-        git checkout trunk
-        deployme --no-sync --host=<single host>
-        lb <single host> ok
-        git-deploy rollback
+        lb --reason="throwing errors" bc48app-0{1..4} maintenance
 
-  config options
-        deploy.block_file
-        deploy.can_make_tags
-        deploy.config_file
-        deploy.deploy_file
-        deploy.hook_dir
-        deploy.mail_tool            ( "/usr/sbin/sendmail -f" )
-        deploy.restrict_umask
-        deploy.send_mail_on_ACTION
-        deploy.support_email
-        deploy.tag_prefix
-        user.name                   (Mandatory)
-        user.email                  (Mandatory)
+    At which point you might want to test another commit. So you could
+    repeat the steps above except with "--no-activate" supplied to
+    "deployme":
 
-    Future thoughts: use gitconfig to replace most of the other config or
-    environment vars.
+        deployme --no-activate --host=bc48app-0{1..4}
+
+    Followed by popping them back in the lb:
+
+        lb --no-rollout bc48app-0{1..4} ok
+
+    To stop screwing around with the host you can either manually put it on
+    the old tag with deployme. Find what that tag is with "deployme
+    active_tags" (it'll be the one most boxes are on):
+
+        deployme active_tag
+
+    And then activate that tag:
+
+        deployme --no-sync --host=bc48app-0{1..4} --tag=<THAT TAG>
+
+    Or simply use "git-deploy revert" to revert the whole cluster to that
+    tag. Note that this will reboot all the machines though.
+
+  Config options
+    These are git(1) config options that need to be set, see git-config(1)
+    for details:
+
+    *   "user.name"
+
+    *   "user.email"
+
+    And these are git-deploy(1)-specific options:
+
+    *   "deploy.block-file"
+
+        A path to a file which if existent will block rollouts, e.g.
+        /etc/ROLLOUTS_BLOCKED
+
+    *   "deploy.can-make-tags"
+
+        Can this environment make tags manually with "git-deploy tag"? Used
+        for special purposes, you probably don't need this.
+
+    *   "deploy.config-file"
+
+        The "git-deploy" config file, set this to e.g. "/etc/git-deploy.ini"
+        in "/etc/gitconfig" on the deployment box to have "git-deploy" read
+        that config file.
+
+        We'll read the config file with "git config --file" so you can also
+        put stuff in "/etc/gitconfig", ".git/config" or any other file Git
+        normally reads.
+
+    *   "deploy.deploy-file"
+
+        This is a file we write out to the directory being deployed before
+        the "sync" step to indicate what tag we've deployed, who deployed it
+        etc. See "Deploy Files" for details.
+
+        This is .deploy by default, but you can also set it to e.g.
+        lib/.deploy in environments where only the lib/ directory is synced
+        out.
+
+    *   "deploy.hook-dir"
+
+        What directory do we look for our hooks in? See "Deploy Hooks" for
+        details.
+
+    *   "deploy.tag-prefix"
+
+        A prefix we'll add to your tags, set to e.g. "cron" for your cron
+        deployes, "app" for your main web application. "debug" is something
+        you can use to test the tool.
+
+    *   "deploy.support-email"
+
+        An E-Mail address we'll tell the user to contact if something goes
+        horribly wrong.
+
+    *   "deploy.mail-tool"
+
+        The tool we use to send mail. "/usr/sbin/sendmail -f" by default.
+
+    *   "deploy.restrict-umask"
+
+        Force the user to have a given umask before they can invoke us.
+
+    *   "deploy.announce-mail"
+
+        An E-Mail address that the below "send-mail-on-*" mails will be sent
+        to.
+
+    *   "deploy.send-mail-on-ACTION"
+
+        A boolean option that configures when we send mail. E.g.
+        "deploy.send-mail-on-start = true" will have mail sent when we do
+        "start".
 
