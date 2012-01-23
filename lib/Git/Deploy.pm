@@ -145,6 +145,9 @@ my %repo_name_detection_values = (
     'dot-git-parent-dir' => sub {
         my $cwd = cwd();
         $cwd =~ s[.*/][];
+        # Make e.g. foo_bar to foo-bar. Git doesn't allow those values
+        # in its config.
+        $cwd =~ s/[^[:alnum:]-]/-/g;
         return $cwd;
     }
 );
