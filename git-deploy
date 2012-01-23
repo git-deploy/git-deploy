@@ -935,8 +935,8 @@ while (@actions) {
         _say "Mailed '$action' mail to $send_to_mail\n";
     }
 
-    _info "Step '$action' concluded at ", strftime("%Y-%m-%d %H:%M:%S",localtime($start_time)),
-          " took ",(time - $start_time)," seconds to complete\n";
+    _info "Step '$action' finished. Started at ", strftime("%Y-%m-%d %H:%M:%S",localtime($start_time)),
+          "; took ",(time - $start_time)," seconds to complete\n";
     if ($final_words) {
         _warn "'$action' for '$prefix' had problems\n$final_words";
         exit(71);
