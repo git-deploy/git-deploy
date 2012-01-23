@@ -191,6 +191,9 @@ sub do_interactive_revert {
         chomp( $input= <> );
         _log( "input: '$input'");
         if ( lc($input) eq 'quit' ) {
+            $$rsubject= "Aborting revert of $prefix";
+            $$rmessage= "$ENV{USER} has instructed git-deploy abort an automated revert of $prefix.\n\n"
+                      . "The live tag is still: $printed[0]\n\n";
             return "rollback";                # we dont want to roll out.
         }
         undef $input if $input =~ /[^0-9]/ or $input < 1 or $input > @printed;
