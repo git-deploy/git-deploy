@@ -73,7 +73,7 @@ our @EXPORT= qw(
     _slurp
     init_gitdir
     log_directory
-
+    rollback_to_name
 );
 
 our $DEBUG = $ENV{GIT_DEPLOY_DEBUG} || 0;
