@@ -54,7 +54,6 @@ use Data::Dumper qw(Dumper);
 
 sub get_to_mail {
     my ($action, $to_mail)= @_;
-    $to_mail ||= get_config("send-mail-on-$action","none");
     $to_mail="" if $to_mail and $to_mail eq 'silent' or $to_mail eq 'none';
     return $to_mail;
 }
@@ -934,14 +933,21 @@ while (@actions) {
         _die "panic: unhanded \$action: $action\n";
     }
 
-# send out the announcement mail
-    if ( my $send_to_mail= get_to_mail($action,$to_mail) ) {
-        send_email_with_sendmail(
-            to_mail => $send_to_mail,
-            subject => $subject,
-            body    => $body,
-        );
-        _say "Mailed '$action' mail to $send_to_mail\n";
+    # send out the announcement mail if requested
+    {
+        my $send_mail_config_param = "send-mail-on-$action";
+        if (get_config_bool($send_mail_config_param, "false")) {
+            if ( my $send_to_mail= get_to_mail($action,$to_mail) ) {
+                send_email_with_sendmail(
+                    to_mail => $send_to_mail,
+                    subject => $subject,
+                    body    => $body,
+                );
+                _say "Mailed '$action' mail to $send_to_mail\n";
+            }
+        } else {
+            _info "Not sending mail on action '$action'. This can be configured with the '$send_mail_config_param'";
+        }
     }
 
     _info "Step '$action' finished. Started at ", strftime("%Y-%m-%d %H:%M:%S",localtime($start_time)),
