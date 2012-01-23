@@ -15,11 +15,12 @@ use Pod::Usage qw(pod2usage);
 use Cwd qw(cwd abs_path);
 use Sys::Hostname qw(hostname);
 use POSIX qw(strftime);
+use FindBin ();
+use File::Spec::Functions qw(catdir);
 our $GIT_DEPLOY_LIB;
 
 BEGIN {
-    $GIT_DEPLOY_LIB = abs_path($0);
-    $GIT_DEPLOY_LIB =~ s{/[^/]+\z}{/git-deploy-lib};
+    $GIT_DEPLOY_LIB = catdir(abs_path($FindBin::Bin), 'lib');
 
     # we set this up so that it's always in PERL5LIB when hooks execute
     $ENV{PERL5LIB} .= ":" if $ENV{PERL5LIB};
