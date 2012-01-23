@@ -139,6 +139,15 @@ my $config_prefix= "deploy";
 my %config;
 
 my $config_file;
+my $repo_name;
+my $repo_name_detection;
+my %repo_name_detection_values = (
+    'dot-git-parent-dir' => sub {
+        my $cwd = cwd();
+        $cwd =~ s[.*/][];
+        return $cwd;
+    }
+);
 
 # _get_config($opts,$setting) # setting is mandatory!
 # _get_config($opts,$setting,$default); # setting will default to $default
@@ -155,6 +164,18 @@ sub _get_config {
         $config_file= ""; # prevent infinite loops
         $config_file= _get_config("--path","$config_prefix.config-file",""); # and now we read this from the normal configs
     }
+    if (defined $config_file
+        and $config_file ne ''
+        and !defined $repo_name_detection) {
+        $repo_name_detection = '';
+        $repo_name_detection = _get_config("--path","$config_prefix.repo-name-detection","");
+        if ($repo_name_detection) {
+            _die "The detection method <$repo_name_detection> is invalid"
+                unless my $detect = $repo_name_detection_values{$repo_name_detection};
+
+            $repo_name = $detect->();
+        }
+    }
     my $opts= shift;
     my $setting= shift;
     my $has_default= @_;
@@ -168,34 +189,42 @@ sub _get_config {
         # If we have a $config_file specified and we are looking for a $config_prefix 
         # config item we will want to look first in the config file, and only then look 
         # in the normal git config files if there is nothing specified in the $config_file. 
-        
-        CONF_SOURCE:
-        foreach my $source (
-            ($config_file && $setting=~/^\Q$config_prefix\E\./) 
-                ? ("--file $config_file","") 
-                : $setting=~/^user\./ 
-                    ? ("--global") 
-                    : ("") 
-        ) {   
-            my $cmd= "git config $source --get $opts $setting";
-            my ($res,$error_code)= git_cmd($cmd);
-        
-            if ($error_code == 1) {
-                if ($source=~/--file/) { # missing from our config file, but the rest? 
-                    next CONF_SOURCE;
-                } elsif ($has_default) {
-                    $res= $default;
-                } else {
-                    _die "Missing mandatory config setting $setting";
-                }
-            } elsif ($error_code == 2) {
-                _die "Bad config, multiple entries from $cmd: $res";
-            } elsif ($error_code) {
-                _die "Got unexpected error code $error_code from $cmd: $res";
-            }
-            $config{$setting}{$opts}= $res; 
-            last;
+
+        my @setting_internal_name = $setting;
+        if ($setting=~/^\Q$config_prefix\E\./ and $repo_name) {
+            my $repo_name_setting = $setting;
+            $repo_name_setting =~ s/^\Q$config_prefix\E\./${config_prefix}-repo-$repo_name./;
+            push @setting_internal_name => $repo_name_setting;
         }
+        SETTING_NAME: for my $setting_internal_name (@setting_internal_name) {
+              my $last = $setting_internal_name eq $setting_internal_name[-1];
+            CONF_SOURCE:
+              foreach my $source (
+                  ($config_file && $setting=~/^\Q$config_prefix\E\./) 
+                  ? ("--file $config_file","") 
+                  : $setting=~/^user\./ 
+                  ? ("--global") 
+                  : ("") 
+              ) {   
+                  my $cmd= "git config $source --get $opts $setting_internal_name";
+                  my ($res,$error_code)= git_cmd($cmd);
+                  if ($error_code == 1) {
+                      if ($source=~/--file/) { # missing from our config file, but the rest? 
+                          next CONF_SOURCE;
+                      } elsif ($has_default) {
+                          $res= $default;
+                      } else {
+                          _die "Missing mandatory config setting $setting (internal name $setting_internal_name)" if $last;
+                      }
+                  } elsif ($error_code == 2) {
+                      _die "Bad config, multiple entries from $cmd: $res";
+                  } elsif ($error_code) {
+                      _die "Got unexpected error code $error_code from $cmd: $res";
+                  }
+                  $config{$setting}{$opts}= $res;
+                  last CONF_SOURCE;
+              }
+          }
     }
     return $config{$setting}{$opts};
 }
