@@ -381,7 +381,7 @@ GetOptions(
     'prefix=s'           => \( my $prefix= '' ),
     'deploy-file-name=s' => \( my $deploy_file_name ),
 
-    'to-mail=s' => \( my $to_mail=  $ENV{LIVE_EMAIL_ADDR}),
+    'to-mail=s' => \( my $to_mail= ($ENV{LIVE_EMAIL_ADDR} || get_config("announce-mail","none"))),
     'date-fmt=s' => \( my $date_fmt= "%Y%m%d-%H%M%S" ),
 
     'check-clean!'    => \$check_clean,
@@ -1562,6 +1562,11 @@ The tool we use to send mail. C</usr/sbin/sendmail -f> by default.
 =item * C<deploy.restrict-umask>
 
 Force the user to have a given umask before they can invoke us.
+
+=item * C<deploy.announce-mail>
+
+An E-Mail address that the below C<send-mail-on-*> mails will be sent
+to.
 
 =item * C<deploy.send-mail-on-ACTION>
 
