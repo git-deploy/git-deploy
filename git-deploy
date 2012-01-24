@@ -587,8 +587,9 @@ if ( $list || $show_tag ) {
 
 if (!$force and (!get_config("user.name","") or !get_config("user.email",""))) {
     _die  "Please make sure you execute:\n\n"
-        . "    git config --global user.name 'Your Name'"
-        . "    git config --global user.email 'email\@host.com'"
+        . "    git config --global user.name 'Your Name'\n"
+        . "    git config --global user.email 'email\@host.com'\n"
+        . "\n"
         . "before you use this tool";
 }
 
