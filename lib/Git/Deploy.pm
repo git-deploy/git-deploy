@@ -145,9 +145,6 @@ my %repo_name_detection_values = (
     'dot-git-parent-dir' => sub {
         my $cwd = cwd();
         $cwd =~ s[.*/][];
-        # Make e.g. foo_bar to foo-bar. Git doesn't allow those values
-        # in its config.
-        $cwd =~ s/[^[:alnum:]-]/-/g;
         return $cwd;
     }
 );
@@ -196,7 +193,7 @@ sub _get_config {
         my @setting_internal_name = $setting;
         if ($setting=~/^\Q$config_prefix\E\./ and $repo_name) {
             my $repo_name_setting = $setting;
-            $repo_name_setting =~ s/^\Q$config_prefix\E\./${config_prefix}-repo-$repo_name./;
+            $repo_name_setting =~ s/^\Q$config_prefix\E\./${config_prefix}.repository $repo_name./;
             unshift @setting_internal_name => $repo_name_setting;
         }
         SETTING_NAME: for my $setting_internal_name (@setting_internal_name) {
@@ -209,7 +206,7 @@ sub _get_config {
                   ? ("--global") 
                   : ("") 
               ) {   
-                  my $cmd= "git config $source --get $opts $setting_internal_name";
+                  my $cmd= "git config $source --get $opts '$setting_internal_name'";
                   my ($res,$error_code)= git_cmd($cmd);
                   if ($error_code == 1) {
                       if ($source=~/--file/) { # missing from our config file, but the rest? 
