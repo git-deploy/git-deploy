@@ -399,7 +399,6 @@ GetOptions(
     'show-deploy-file!'     => \( my $show_deploy_file ),
     'show-prefix'           => \( my $show_prefix ),
     'show-hook-dir'         => \( my $show_hook_dir ),
-    'show-status|show-step' => \( my $show_step ),
 
     'skip_hooks' => \( $SKIP_HOOKS ),
 
@@ -526,7 +525,7 @@ if ($show_deploy_file) {
         exit(1);
     }
 }
-if ( $action eq 'status' or $show_step ) {
+if ( $action eq 'status' ) {
     my $status= read_rollout_status();
     my $exit_val= 0;
     if ( !$rollback_tag || !$status ) {
@@ -1034,11 +1033,6 @@ using this tool.
 =head1 OTHER OPTIONS
 
 =over 8
-
-=item B<--show-step>
-
-Print out the step log if one exists. If nothing is printed out then there is no
-rollout underway.
 
 =item B<--message>=STRING
 
