@@ -94,11 +94,6 @@ sub do_pre_checks {
 
     push_timings("gdt_internal__do_pre_checks__start");
 
-    # make sure they arent trying to do this from their home dir
-    my $cwd= cwd();
-    if ( $cwd !~ m!^/usr/local/! and $prefix !~ /debug/) {
-        _die "Will not perform action '$action' for the role '$prefix' from the directory '$cwd'\n";
-    }
     if ( my $unclean_status= check_if_working_dir_is_clean() ) {
         _die "working directory not clean. git status reports:\n" . $unclean_status;
     }
