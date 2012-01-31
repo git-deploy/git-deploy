@@ -499,13 +499,30 @@ if ($show_hook_dir) {
     }
 }
 if ($show_deploy_file) {
+    $deploy_file_name ||= get_deploy_file_name();
     my $deploy_file_text= read_deploy_file($deploy_file_name);
     if ($deploy_file_text) {
         print $deploy_file_text, ( $deploy_file_text && -t STDOUT ) ? "\n" : "";
         exit(0);
     }
     else {
-        _warn "No deploy file or file not valid\n";
+        if (-e $deploy_file_name and !-r $deploy_file_name) {
+            _warn "The deploy file <$deploy_file_name> exists, but we can't read it\n";
+        } elsif (!-e $deploy_file_name) {
+            _warn "The deploy file <$deploy_file_name> doesn't exist.\n" .
+                  "\n" .
+                  "You should run:\n" .
+                  "\n" .
+                  "\tgit-deploy start\n" .
+                  "\n" .
+                  "Followed by:\n" .
+                  "\n" .
+                  "\tgit-deploytool sync\n" .
+                  "\n" .
+                  "To create one and sync out your code\n";
+        } else {
+            _warn "The deploy file <$deploy_file_name> is not valid\n";
+        }
         exit(1);
     }
 }
