@@ -1509,7 +1509,7 @@ details.
 =head3 deploy.tag-prefix
 
 A prefix we'll add to your tags, set to e.g. C<cron> for your cron
-deployes, C<app> for your main web application. C<debug> is something
+deploys, C<app> for your main web application. C<debug> is something
 you can use to test the tool.
 
 =head3 deploy.support-email
