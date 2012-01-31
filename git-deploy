@@ -1178,7 +1178,7 @@ One thing it definitely doesn't do is worry about how your code
 =head2 Deploy Files
 
 A deploy file consists of a set of keys and values followed by a newline followed by
-the deployment message use to create the deployment tag. For
+the deployment message used to create the deployment tag. For
 instance
 
     commit: 7e25a770901c9b1eb75ad1511580a98acff4ad60
