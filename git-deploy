@@ -1047,7 +1047,8 @@ Throw an error if there would be no prefix.
 
 =item B<--to-mail>=STRING
 
-Address to use to send announcement mails to. Defaults to 'live@somewhere.com'
+Address to use to send announcement mails to. Defaults to 'none'. See
+L</deploy.announce-mail> for a config option to set this.
 
 =item B<--show-deploy-file>
 
