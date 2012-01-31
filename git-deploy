@@ -4,12 +4,6 @@ use warnings;
 
 our $VERSION= '5.00';
 
-=head1 NAME
-
-git-deploy - automate the git steps required for a deploying code from a git repository
-
-=cut
-
 use Getopt::Long qw(GetOptions);
 use Pod::Usage qw(pod2usage);
 use Cwd qw(cwd abs_path);
@@ -971,6 +965,10 @@ push_tags( $remote_site );
 exit(0);
 
 __END__
+
+=head1 NAME
+
+git-deploy - automate the git steps required for a deploying code from a git repository
 
 =head1 SYNOPSIS
 
