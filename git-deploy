@@ -1037,7 +1037,7 @@ using this tool.
 =item B<--message>=STRING
 
 Message to use when creating a tag. Required when creating a new tag. Since you
-cant know the name of the newly created tag when writing the message you can use
+can't know the name of the newly created tag when writing the message you can use
 the special sequence C<%TAG> as a replacement.
 
 =item B<--show-prefix>
