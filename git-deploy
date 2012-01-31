@@ -1040,38 +1040,135 @@ hooks.
 
 =head1 DESCRIPTION
 
-B<git deploy> provides tools for managing a git based roll out process.
+B<git-deploy> is a tool written to make deployments so easy that
+you'll let new hires do them on their first day. Conceived and
+introduced at Booking.com in 2008, it's changed deployments from being
+something that took hours to being so easy that deploying times a day
+is what happens on a slow day.
 
-The basic idea is that the process is divided into basically three stages, each one
-starting with the execution of this tool.
+It's highly configurable and pluggable, we use it for deploying
+everything from single-server environments to deploying our main web
+server cluster.
 
-The steps are as follows:
+It creates an annotated git tag for every deploy and pushes those tags
+upstream, so anyone with a copy of the repository can see what's
+deployed where, which is invaluable for debugging and tracking the
+history of deploys.
 
-    $ git-deploy start
-      # perfom tests
-    $ git-deploy sync
-      # perfom syncronization
-    $ git-deploy finish
+It adheres to the Unix philosophy, it's a tool that does one thing and
+does one thing well. It's fully hookable (the hook API is just a bunch
+of executable files with return values, you don't have to learn to use
+some plugin API), it's easily scriptable, and it runs anywhere you
+have a standard installation of Perl 5.8 or later.
 
-If there is a problem in general the tool will detect it, and advise you of what it is and
-how to deal with it.
+But enough with the sales pitch, what does it actually do?
 
-This will ensure that tags are created which you can roll back to, and ensure that they are
-pushed afterwards, amongst various other things.
+=over 8
 
-git deploy will fetch all tags from the remote repository configured in
-the current repository before processing. You can disable this behaviour by using
---no-remote which overrides all remote actions.
+=item *
 
-In the case of an unclean working directory an error message will be produced and
-a git status will be output. Note: This includes untracked files, which must be either
-deleted or added to the repositories .gitignore (which itself must then be committed)
-before you can  proceed with using git deploy. You can disable this with --no-check.
+It implements exclusive locking, i.e. it only allows one person to
+deploy to one environment at a time. This is how you start
+deployments, and you do this with:
 
-Additionally git deploy contains a number of utilities for reviewing the state of
-the repository from the point of view of the tags it contains. Specifically
-C<--list> and C<--list-all> are good ways of viewing the rollout history and
-checking what commit you are on. See the documentation for these options for details
+    git-deploy start
+
+Which will create a lock file and do "git pull" for you to update you
+to the latest upstream code.
+
+This means that you have a repository somewhere that you do
+deployments from. This is your staging server, or the only server you
+have, it doesn't matter. It just has to be one standard location.
+
+Under the hood locking is simply implemented with a
+F<.git/deploy/lock> file, as long as users have configured their umask
+correctly (and git-deploy can enforce this) you can forcibly take over
+another user's deployments with C<--force>.
+
+=item *
+
+Once you're in the locked state you can do any git operation you'd
+like. git-deploy doesn't care, you can "git pull", you can make new
+commits (as long as you push them upstream before the sync step).
+
+=item *
+
+Once you're happy with the state of things you want to sync out you
+tell git-deploy, which will create a tag to record in history that the
+current state is what you released.
+
+If your current server is the only server you have you do a release at
+this point:
+
+    git-deploy release
+
+That'll create a tag and push it, but it won't sync your code anywhere
+else. If you have a bigger setup than that you do:
+
+    git-deploy sync
+
+Which will create a tag and sync it out. How the "sync it out" part
+happens is B<completely up to you> (see L</Sync Hooks>), you can use
+everything from git itself to carrier pigeons, git-deploy doesn't
+care.
+
+If the sync hook fails (e.g. because a gypsy ate your pigeon)
+git-deploy exits with an error and expects to you fix the
+situation.
+
+Usually fixing it is a combination of running the sync hook manually
+again and making a mental note to beat your sysadmins with a
+rake. Once you've done the former successfully you do:
+
+    git-deploy finish
+
+Which "git-deploy release" and "git-deploy sync" do for you if you
+haven't encountered an error.
+
+That'll do any final actions (like sending an E-Mail about your shiny
+new deployment), and then unlock the deployment server so the next
+poor sob who has to do a deployment can use it.
+
+=back
+
+Does that sound simple? Well that's because it is. It's a very simple
+tool, it's so simple that we even allow designers to use it.
+
+So why do you need it? Well partly because we've been lying to you up
+until this point. The main feature of this tool is not actually doing
+rollouts, it's doing rollbacks.
+
+When you inevitably fuck up a rollout you'll want to roll back as fast
+as possible, B<git-deploy> makes this really easy. You can run
+B<git-deploy show> to see a history of recent rollouts, you can use
+B<git-deploy revert> to interactively revert to a previous revision.
+
+When you manage to screw even this up and roll back the wrong thing
+B<git-deploy> makes it easy to see exactly where you went wrong,
+B<git-deploy show> will show you which of the several tags you've been
+jumping back and forth between correspond to the same revision.
+
+The tool also does very exhaustive error checking added over years of
+trial and error as its inexperienced users have tried to screw up
+rollouts in every way possible.
+
+If there is a problem in general the tool will detect it, and advise
+you of what it is and how to deal with it.
+
+It'll ensure that tags are created which you can roll back to, and
+ensure that they are pushed afterwards.
+
+B<git-deploy> will fetch all tags from the remote repository
+configured in the current repository before processing. You can
+disable this behaviour by using --no-remote which overrides all remote
+actions.
+
+In the case of an unclean working directory an error message will be
+produced and a git status will be output. Note: This includes
+untracked files, which must be either deleted or added to the
+repositories F<.gitignore> (which itself must then be committed)
+before you can proceed with using B<git-deploy>. You can disable this
+with --no-check if you're feeling adventurous.
 
 =head2 Git Production Environments
 
@@ -1571,5 +1668,3 @@ manual-sync action. This will however execute the pre-sync and post-sync
 hooks, possibly with errors.
 
 =cut
-
-
