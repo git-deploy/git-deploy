@@ -1038,8 +1038,8 @@ hooks.
 B<git-deploy> is a tool written to make deployments so easy that
 you'll let new hires do them on their first day. Conceived and
 introduced at Booking.com in 2008, it's changed deployments from being
-something that took hours to being so easy that deploying times a day
-is what happens on a slow day.
+something that took hours to being so easy that deploying 20 times a
+day is what happens on a slow day.
 
 It's highly configurable and pluggable, we use it for deploying
 everything from single-server environments to deploying our main web
