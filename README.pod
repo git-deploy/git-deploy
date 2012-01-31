@@ -58,23 +58,23 @@ hooks.
 
 B<git-deploy> is a tool written to make deployments so easy that
 you'll let new hires do them on their first day. Conceived and
-introduced at Booking.com in 2008, it's changed deployments from being
-something that took hours to being so easy that deploying 20 times a
-day is what happens on a slow day.
+introduced at Booking.com in 2008, it has changed deployments from being
+something that took hours, to being so easy that deploying 20 times a
+day is what happens (on a slow day).
 
-It's highly configurable and pluggable, we use it for deploying
+It's highly configurable and pluggable. We use it for deploying
 everything from single-server environments to deploying our main web
 server cluster.
 
-It creates an annotated git tag for every deploy and pushes those tags
+It creates an annotated git tag for every rollout, and pushes those tags
 upstream, so anyone with a copy of the repository can see what's
-deployed where, which is invaluable for debugging and tracking the
-history of deploys.
+deployed where. This is invaluable for debugging and tracking the
+history of deployments.
 
-It adheres to the Unix philosophy, it's a tool that does one thing and
-does one thing well. It's fully hookable (the hook API is just a bunch
-of executable files with return values, you don't have to learn to use
-some plugin API), it's easily scriptable, and it runs anywhere you
+It adheres to the Unix philosophy, being a tool that does one thing and,
+does it well. It's fully pluggable (the hook API is just a bunch
+of executable files with exit() values, you don't have to learn to use
+a complicated API), it's easily scriptable, and it runs anywhere you
 have a standard installation of Perl 5.8 or later.
 
 But enough with the sales pitch, what does it actually do?
@@ -83,21 +83,21 @@ But enough with the sales pitch, what does it actually do?
 
 =item *
 
-It implements exclusive locking, i.e. it only allows one person to
-deploy to one environment at a time. This is how you start
-deployments, and you do this with:
+git-deploy implements exclusive locking, i.e. it allows only one person to
+deploy to an environment at the same time. This is how a deployment starts, and
+you do this with:
 
     git-deploy start
 
-Which will create a lock file and do "git pull" for you to update you
-to the latest upstream code.
+...which will create a lock file and do "git pull" for you, to update your
+local tree to include the latest upstream code.
 
 This means that you have a repository somewhere that you do
 deployments from. This is your staging server, or the only server you
 have, it doesn't matter. It just has to be one standard location.
 
 Under the hood locking is simply implemented with a
-F<.git/deploy/lock> file, as long as users have configured their umask
+F<.git/deploy/lock> file - if users have configured their umask
 correctly (and git-deploy can enforce this) you can forcibly take over
 another user's deployments with C<--force>.
 
@@ -114,42 +114,44 @@ If you chicken out at this point you can always:
 Which'll get you back to the state you were in before you ran
 L</start>.
 
-When you're happy with the state of things you want to sync out you
-tell git-deploy, which will create a tag to record in history that the
-current state is what you released.
+When you're happy with the state of things you want to deploy, git-deploy will
+create a tag to record in the commit history that the current state is what was
+released.
 
-If your current both your deployment and production environment you
-should do a release at this point. You have to set
-L</deploy.can-make-tags> to C<true> to use this:
-
-    git-deploy release
-
-Which'll create a tag and push it, but it won't sync your code
-anywhere else.
-
-This is not a recommended way to use the tool since it's, what you
-want instead is:
+To do so:
 
     git-deploy sync
 
-Which will create a tag and sync it out. How the "sync it out" part
-happens is B<completely up to you> (see L</Sync Hooks>), you can use
-everything from git itself to carrier pigeons, git-deploy doesn't
-care.
+...which will create a tag, and roll it out to your network. The details of the
+rollout itself are B<completely up to you> (see L</Sync Hooks>). You can use
+everything from git itself to carrier pigeons, git-deploy doesn't care.
 
-If the sync hook fails (e.g. because a gypsy ate your pigeon)
-git-deploy exits with an error and expects to you fix the situation.
+If you prefer to perform the rollout yourself, you can instead use git-deploy
+to simply tag a release and push that back to your main repository:
+
+    git-deploy release
+
+(You'll have to set L</deploy.can-make-tags> to C<true> to use this.)
+
+Note: Your life will be much easier if you choose to implement sync hooks
+instead.
+
+If you choose to implement sync hooks for rollouts, but a sync hook fails (e.g.
+because a gypsy ate your pigeon), git-deploy exits with an error and expects to
+you fix the situation.
 
 Usually fixing it is a combination of running the sync hook manually
-again and making a mental note to beat your sysadmins with a
-rake. Once you've done the former successfully you do:
+again, and making a mental note to beat your sysadmins with a
+rake. 
+
+Once you've done the former successfully:
 
     git-deploy finish
 
-Which "git-deploy release" and "git-deploy sync" do for you if you
-haven't encountered an error.
+(...which "git-deploy release" and "git-deploy sync" do for you if you
+haven't encountered an error.)
 
-That'll do any final actions (like sending an E-Mail about your shiny
+That'll perform any final actions (like sending an e-mail about your shiny
 new deployment), and then unlock the deployment server so the next
 poor sob who has to do a deployment can use it.
 
@@ -162,18 +164,18 @@ So why do you need it? Well partly because we've been lying to you up
 until this point. The main feature of this tool is not actually doing
 rollouts, it's doing rollbacks.
 
-When you inevitably fuck up a rollout you'll want to roll back as fast
+When you inevitably fuck up a rollout and you want to roll back as fast
 as possible, B<git-deploy> makes this really easy. You can run
-B<git-deploy show> to see a history of recent rollouts, you can use
+B<git-deploy show> to see a history of recent rollouts, and you can use
 B<git-deploy revert> to interactively revert to a previous revision.
 
-When you manage to screw even this up and roll back the wrong thing
-B<git-deploy> makes it easy to see exactly where you went wrong,
-B<git-deploy show> will show you which of the several tags you've been
-jumping back and forth between correspond to the same revision.
+When you manage to screw even this up, and roll back the wrong thing,
+B<git-deploy> makes it easy to see exactly where you went wrong, and
+B<git-deploy show> will show you which of the several tags you've been jumping
+back and forth between actually correspond to the same revision.
 
-The tool also does very exhaustive error checking added over years of
-trial and error as its inexperienced users have tried to screw up
+The tool also performs very exhaustive error checking added over years of
+trial and error, as its inexperienced users have tried to screw up
 rollouts in every way possible.
 
 If there is a problem in general the tool will detect it, and advise
@@ -188,19 +190,20 @@ disable this behaviour by using --no-remote which overrides all remote
 actions.
 
 In the case of an unclean working directory an error message will be
-produced and a git status will be output. Note: This includes
+produced and the output of `git status` will be displayed. Note: This includes
 untracked files, which must be either deleted or added to the
-repositories F<.gitignore> (which itself must then be committed)
+repository's F<.gitignore> (which itself must then be committed),
 before you can proceed with using B<git-deploy>. You can disable this
 with --no-check if you're feeling adventurous.
 
+FIXME?
 One thing it definitely doesn't do is worry about how your code
 
 =head2 Deploy Files
 
-A deploy file consists of a set of keys and values followed by a newline followed by
-the deployment message used to create the deployment tag. For
-instance
+A deploy file consists of a set of keys and values, followed by a newline,
+followed by the deployment message used to create the deployment tag. For
+instance:
 
     commit: 7e25a770901c9b1eb75ad1511580a98acff4ad60
     tag: sheep-20080827-1419
@@ -212,19 +215,19 @@ instance
 
     <EOF>
 
-If new key/values are added they will always be added before the blank line.
+If new key/values are added, they will always be added before the blank line.
 
 =head2 Deploy Hooks
 
-At various points in the deployment process F<git-deploy> will
-execute user-supplied deployment hooks.
+At various points in the deployment process F<git-deploy> can
+execute user-supplied hooks.
 
-The idea of this is to provide a mechanism by which actions and tests
+This is to provide a mechanism by which actions and tests
 will be automatically executed, and if necessary can prevent the
-synchronization from occurring.
+final sync step from occurring.
 
-Deploy hooks can be specific at the generic level, that is for all
-applications, and on an application specific basis.
+Hooks can be specific at the generic level (i.e. for all
+environments), and on an environment-specific basis.
 
 =head1 OPTIONS
 
@@ -243,7 +246,7 @@ Emits progress information to STDERR during processing.
 
 =item B<--help>
 
-Print a brief help message and exits. (You are probably reading this outputs right now.)
+Print a brief help message and exits. (You are probably reading this output right now.)
 
 =item B<--man>
 
@@ -274,7 +277,7 @@ L</deploy.announce-mail> for a config option to set this.
 
 =item B<--show-deploy-file>
 
-Prints to STDOUT the current deploy file if and only if the commit it contains
+Prints the name of the current deploy file to STDOUT, if and only if the commit it contains
 corresponds to HEAD. Otherwise prints nothing. Exits immediately afterwards.
 
 =item B<--deploy-file-name>
@@ -286,9 +289,9 @@ C<./lib/.deploy> if a directory named C<./lib> exists, and otherwise to C<./.dep
 
 =item B<--list-all>
 
-Instead of printing out a single tagname for the current commits tag print out a
+Instead of printing out a single tagname for the current commit's tag, print out a
 verbose list of tags, sorted by the date that they contain in order of most recent to
-oldest. The output will be structured like this:
+oldest. The output is structured like so:
 
     7e25a770901c.. *tag: sheep-20080827-1419
     2806eb24c3c2..  tag: cows-20080827-1240
@@ -305,10 +308,10 @@ by C<< <space><star> >>. The starred items correspond to HEAD. The arrow indicat
 that there are two different tags to the same commit, and points to the oldest
 equivalent tag. This is then followed by either 'tag:' or 'branch:' (depending on
 whether C<--include-branches> is invoked) and then the item name. This may then be
-followed by space and then an arrow and then a second name, which indicates that
-the item is a duplicate and shows the oldest displayed item (undated items like
-branches go last in an alphabetic order with some special exceptions for trunk or
-master).
+followed by space and an arrow, and then a second name, which indicates that
+the tag is a duplicate and shows the oldest displayed item. Undated items like
+branches go last in alphabetic order, with some special exceptions for i.e. trunk or
+master.
 
 When used with just C<--list> mode, only starred items corresponding to HEAD are displayed,
 --list-all shows unstarred items that do not correspond to HEAD as well.
@@ -355,14 +358,13 @@ Using an remote site name of 'none' is the same as using --no-remote
 =item B<--remote-branch>=STRING
 
 Name of remote branch to access when pushing, pulling or fetching. Defaults to the current
-branch just like git pull or git push would.
+branch, just like git pull or git push would.
 
 =item B<--date-fmt>=FORMAT
 
 Perl strfime() format to use in datestamped tags. Defaults to '%Y%m%d-%H%M'.
-Please do not change this wantonly. Various features of the deploy process
-expect to be able to parse the date stamp and require it to be in more or less
-this format.
+Changing this value is probably unwise, as various features of the deploy process
+expect to be able to parse date stamps in this format.
 
 =back
 
@@ -370,7 +372,7 @@ this format.
 
 =head2 start
 
-Used to start a multi step rollout procedure. Remembers (and if necessary tags) start
+Used to start a multi step rollout procedure. Remembers (and if necessary, tags) start
 position as well as create locks to prevent two people from doing a procedure at the
 same time. See C<hotfix> below for rollout out a hotfix on top of a previous rollout
 tag.
@@ -393,32 +395,35 @@ I.e. if someone else has started a rollout and gone away you can do:
 And the state of the rollout machine will be reset back to what it was
 before they ran C<git-deploy start>.
 
-Note that the "abort" command used to be called "rollback" but that term lead to a lot of
-confusion and we are trying to avoid it going forward.
+Note: this command used to be named "rollback", but this caused too much confusion.
 
 =head2 finish
 
-Used to declare that the rollout session is finished, push any new commits or tags, create
-the final emails of what changed and related functions.
+Used to declare that the rollout session is finished, and that git-deploy
+should push any new commits or tags, create the final emails of any changes
+and perform related functions.
 
 =head2 release
 
-Used in the "two step" rollout process for boxes where there is no manual synchronization step.
+Used in the "two step" rollout process for boxes where there is no manual
+synchronization step.
 
 =head2 tag
 
-Used in the "one step" rollout process to tag a commit and push it to the remote.
+Used in the "one step" rollout process to tag a commit and push it to the
+remote.
 
 =head2 revert
 
-This is used to do an interactive "revert" of the site to a previous rollout. It combines
-the steps "start/git reset .../sync/finish" into one process, with interactive selection
-of the commit to revert to. If sync hooks and deploy hooks are provided then they will be
-automatically run as normal. If they aren't a manual sync/finish is required.
+This is used to do an interactive "revert" of the site to a previous rollout.
+It combines the steps "git-deploy start/git reset .../git-deploy
+sync/git-deploy finish" into one, with interactive selection of the commit to
+revert to. If sync hooks and deploy hooks are provided then they will be
+automatically run as normal. If they aren't, a manual sync/finish is required.
 
 =head2 show-tag
 
-Show the tag for the current commit if there is one.
+Show the tag for the current commit, if there is one.
 
 =head2 status
 
@@ -426,19 +431,19 @@ Show the status of the deploy procedure. Can be used to check what step you are 
 
 =head2 hotfix
 
-Here's how you can do a hotfix rollout. I.e. when you have an existing
-rollout tag that you want to apply a hotfix on.
+Here's how you can do a hotfix rollout, i.e. when you have an existing
+rollout tag that you wish to apply a single commit (or several) onto.
 
-First, instead of C<git-deploy start> do:
+First, instead of C<git-deploy start>, do:
 
     git-deploy hotfix
 
-That'll start C<git-deploy> without doing the normal C<git pull>
-operation. Then you cherry-pick your hotfix:
+...which will start C<git-deploy> without performing a C<git pull>
+beforehand. Then you cherry-pick some commit/s:
 
     git cherry-pick SHA1_OF_HOTFIX
 
-Then note the sha1 of your cherry-picked commit. This is your C<NEW_SHA1>
+...and make a note of the resulting <NEW_SHA1>:
 
     git --no-pager log -1 --pretty=%H
 
@@ -450,7 +455,7 @@ Followed by:
 
     git push
 
-To push your hotfix to the Git server. But now you're not at what you
+to push your hotfix to the Git server. But now you're not at what you
 want to roll out, so do:
 
     git reset --hard NEW_SHA1
@@ -459,12 +464,11 @@ want to roll out, so do:
 This will ensure that you are on your hotfix commit, and that any git hooks are
 executed. You should then TEST the code. On a webserver this normally involves
 
-    prodctl restart
+    /etc/init.d/httpd restart
 
-and then some manual testing of the relevant web site.
+followed by some manual testing of the relevant web site.
 
-
-When you are satisfied that things are ok you can do execute the sync:
+When you are satisfied that things are OK, you can execute the sync:
 
     git-deploy sync
 
@@ -475,7 +479,7 @@ merged into C<git-deploy sync>.
 
 Declares the current commit is ready for sync, but will drop the user back into the shell
 to execute the sync manually. It is then up to the user to execute the finish action when
-they have deemed the roll out to be synced.
+they have deemed the rollout to be complete.
 
 =head1 CONFIGURATION
 
@@ -535,7 +539,7 @@ you can use to test the tool.
 
 =head3 deploy.support-email
 
-An E-Mail address we'll tell the user to contact if something goes
+An e-mail address we'll tell the user to contact if something goes
 horribly wrong.
 
 =head3 deploy.mail-tool
@@ -548,14 +552,14 @@ Force the user to have a given umask before they can invoke us.
 
 =head3 deploy.announce-mail
 
-An E-Mail address that the below C<send-mail-on-*> mails will be sent
+An e-mail address that the below C<send-mail-on-*> mails will be sent
 to.
 
 =head3 deploy.send-mail-on-ACTION
 
 A boolean option that configures when we send
 mail. E.g. C<deploy.send-mail-on-start = true> will have mail sent
-when we do "start".
+when we do "git-deploy start".
 
 =head1 WRITING DEPLOY HOOKS
 
@@ -599,10 +603,16 @@ F<deploy/apps/{common,$app}/$phase.*> hooks and execute them in
 C<sort> order, first the C<common> hooks and then the C<$app> specific
 hooks. Note that the hooks B<MUST> have their executable bit set.
 
+The current phase can be obtained by inspecting the environment variable
+$GIT_DEPLOY_PHASE (e.g. 'post-pull', 'pre-sync').
+
+The current hook prefix can be obtained by inspecting the environment variable
+$GIT_DEPLOY_HOOK_PREFIX (e.g. 'common', 'sheep').
+
 =head2 Available phase hooks
 
-Currently, these are the hooks that will be executed. These all the
-hooks except the L</post-tree-update> hook correspond to specific
+Currently, these are the hooks that will be executed. All the
+hooks, except the L</post-tree-update> hook, correspond to specific
 git-deploy actions:
 
 =head3 pre-start
@@ -627,7 +637,7 @@ F<deploy/sync/$app.sync> hook.
 
 =head3 post-sync
 
-After we've synced. Here you could e.g. send custom E-Mails indicating
+After we've synced. Here you could e.g. send custom e-mails indicating
 that the deployment was a success.
 
 =head3 post-rollback
@@ -639,7 +649,7 @@ into a load balancer.
 
 =head3 post-tree-update
 
-Executed after we update the working tree to a new revisions, whether
+Executed after we update the working tree to a new revision, whether
 that's after the C<pull> in the C<start> phase, after C<git reset
 --hard> in the C<rollback> phase, or after a C<revert>.
 
@@ -648,17 +658,17 @@ critical tests (e.g. config tests) should be run.
 
 The exit code from these hooks is ignored in actions like C<rollback>
 and C<revert>. We don't want the abort or revert to fail just
-because some webserver didn't restart.
+because a web server didn't restart.
 
 =head2 Return values
 
 Each script is expected to return a nonzero exit code on failure, and
-a zero exit code on success (in other words standard unix shell return
+a zero exit code on success (in other words, standard Unix shell return
 semantics). Any script that "fails" will cause C<git-deploy> to
 abort at that point.
 
 More granular failure codes are planned in the future. E.g. "failed
-but should try again", "failed but should ask the user if trying
+but should try again", "failed but should ask the user before trying
 again" etc. But this hasn't yet been implemented.
 
 =head2 Sync Hooks
