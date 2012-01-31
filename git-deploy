@@ -1086,9 +1086,14 @@ Once you're in the locked state you can do any git operation you'd
 like. git-deploy doesn't care, you can "git pull", you can make new
 commits (as long as you push them upstream before the sync step).
 
-=item *
+If you chicken out at this point you can always:
 
-Once you're happy with the state of things you want to sync out you
+    git-deploy abort
+
+Which'll get you back to the state you were in before you ran
+L</start>.
+
+When you're happy with the state of things you want to sync out you
 tell git-deploy, which will create a tag to record in history that the
 current state is what you released.
 
