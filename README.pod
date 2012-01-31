@@ -107,19 +107,28 @@ Once you're in the locked state you can do any git operation you'd
 like. git-deploy doesn't care, you can "git pull", you can make new
 commits (as long as you push them upstream before the sync step).
 
-=item *
+If you chicken out at this point you can always:
 
-Once you're happy with the state of things you want to sync out you
+    git-deploy abort
+
+Which'll get you back to the state you were in before you ran
+L</start>.
+
+When you're happy with the state of things you want to sync out you
 tell git-deploy, which will create a tag to record in history that the
 current state is what you released.
 
-If your current server is the only server you have you do a release at
-this point:
+If your current both your deployment and production environment you
+should do a release at this point. You have to set
+L</deploy.can-make-tags> to C<true> to use this:
 
     git-deploy release
 
-That'll create a tag and push it, but it won't sync your code anywhere
-else. If you have a bigger setup than that you do:
+Which'll create a tag and push it, but it won't sync your code
+anywhere else.
+
+This is not a recommended way to use the tool since it's, what you
+want instead is:
 
     git-deploy sync
 
@@ -129,8 +138,7 @@ everything from git itself to carrier pigeons, git-deploy doesn't
 care.
 
 If the sync hook fails (e.g. because a gypsy ate your pigeon)
-git-deploy exits with an error and expects to you fix the
-situation.
+git-deploy exits with an error and expects to you fix the situation.
 
 Usually fixing it is a combination of running the sync hook manually
 again and making a mental note to beat your sysadmins with a
@@ -186,27 +194,12 @@ repositories F<.gitignore> (which itself must then be committed)
 before you can proceed with using B<git-deploy>. You can disable this
 with --no-check if you're feeling adventurous.
 
-=head2 Git Production Environments
-
-Some environment use a git checkout as their working
-directory. In this case the three step rollout is overkill. As a replacement there is a
-simpler two step process:
-
-    git-deploy start
-    git-deploy release
-
-If you want to abort you can say:
-
-    git-deploy abort
-
-instead. To use this option you need to configure the repository by setting
-
-   git config deploy.can-make-tags true
+One thing it definitely doesn't do is worry about how your code
 
 =head2 Deploy Files
 
 A deploy file consists of a set of keys and values followed by a newline followed by
-the deployment message use to create the deployment tag. For
+the deployment message used to create the deployment tag. For
 instance
 
     commit: 7e25a770901c9b1eb75ad1511580a98acff4ad60
@@ -537,7 +530,7 @@ details.
 =head3 deploy.tag-prefix
 
 A prefix we'll add to your tags, set to e.g. C<cron> for your cron
-deployes, C<app> for your main web application. C<debug> is something
+deploys, C<app> for your main web application. C<debug> is something
 you can use to test the tool.
 
 =head3 deploy.support-email
