@@ -1040,13 +1040,6 @@ using this tool.
 Print out the step log if one exists. If nothing is printed out then there is no
 rollout underway.
 
-=item B<--date-fmt>=FORMAT
-
-Perl strfime() format to use in datestamped tags. Defaults to '%Y%m%d-%H%M'.
-Please do not change this wantonly. Various features of the deploy process
-expect to be able to parse the date stamp and require it to be in more or less
-this format.
-
 =item B<--message>=STRING
 
 Message to use when creating a tag. Required when creating a new tag. Since you
@@ -1148,6 +1141,15 @@ Name of remote branch to access when pushing, pulling or fetching. Defaults to t
 branch just like git pull or git push would.
 
 =back
+
+=head2 OBSCURE OPTIONS YOU SHOULD NEVER HAVE TO USE
+
+=item B<--date-fmt>=FORMAT
+
+Perl strfime() format to use in datestamped tags. Defaults to '%Y%m%d-%H%M'.
+Please do not change this wantonly. Various features of the deploy process
+expect to be able to parse the date stamp and require it to be in more or less
+this format.
 
 =head2 Actions
 
