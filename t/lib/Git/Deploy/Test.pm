@@ -13,12 +13,18 @@ our @EXPORT = qw(
 );
 
 sub _system {
-    my $cmd = shift;
-    my $want_output = not defined wantarray;
-    system $cmd and do {
-        fail "The command <$cmd> failed: $!";
-        exit 1;
-    };
+    my ($cmd, $wanted_exit_code) = @_;
+    $wanted_exit_code ||= 0;
+
+    my $raw_exit_code = system $cmd;
+    my $exit_code = $raw_exit_code >> 8;
+
+    if ($exit_code != $wanted_exit_code) {
+        fail "The command <$cmd> exited with <$exit_code>, but we wanted <$wanted_exit_code>: $!"
+    } else {
+        pass "The command <$cmd> exited with code <$exit_code> like we wanted";
+    }
+    return $exit_code;
 }
 
 sub _mkdir {
@@ -90,10 +96,11 @@ sub _slurp {
 
 sub _run_git_deploy {
     my ($ctx, %args) = @_;
+    my $wanted_exit_code = $args{wanted_exit_code} || 0;
 
     my $out_dir = $ctx->{out_dir};
     $ctx->{"last_$_"} = catfile($out_dir, "last_$_") for qw(stdout stderr);
-    _system "$ctx->{git_deploy} $args{args} >$ctx->{last_stdout} 2>$ctx->{last_stderr}";
+    _system "$ctx->{git_deploy} $args{args} >$ctx->{last_stdout} 2>$ctx->{last_stderr}", $wanted_exit_code;
 
     # Print out any fail we had on stderr that isn't debug output
     _system "grep -v ^# $ctx->{last_stderr} 1>&2 || :";
