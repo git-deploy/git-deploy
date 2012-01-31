@@ -95,7 +95,7 @@ sub get_log_handle {
                     last;
                 }
             }
-            $LOG_FILE= $log_dir . "/git-Deploy.log";
+            $LOG_FILE= $log_dir . "/git-deploy.log";
         }
 
         open $LOG_HANDLE, ">>", $LOG_FILE
