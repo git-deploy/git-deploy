@@ -1015,15 +1015,15 @@ about, and how it operates from a big picture perspective.
 
 =item *
 
-See L</OPTIONS> and L</OTHER OPTIONS> for common options you might
-want to use, and increasingly obscure options you'll probably never
-need, respectively.
-
-=item *
-
 See L</ACTIONS> for the B<git-deploy> sub-commands. These are the
 commands you'll be using on a daily (or hopefully less than hourly)
 basis to do rollouts.
+
+=item *
+
+See L</OPTIONS> and L</OTHER OPTIONS> for common options you might
+want to use, and increasingly obscure options you'll probably never
+need, respectively.
 
 =item *
 
