@@ -1005,7 +1005,7 @@ Emits progress information to STDERR during processing.
 
 =item B<--help>
 
-Print a brief help message and exits. (You are probably reading what this outputs right now.)
+Print a brief help message and exits. (You are probably reading this outputs right now.)
 
 =item B<--man>
 
