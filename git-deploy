@@ -987,17 +987,17 @@ git-deploy - automate the git steps required for a deploying code from a git rep
     git deploy --man
 
     actions:
-        start|sync|finish|abort  # normal manual rollout sequence (finish is automatic if sync succeeds)
-        start|release|abort      # normal git-production env sequence
-        hotfix                   # Roll out the site with a hotfix (replaces start)
+        status                   # show rollout status of current repository
+        start|abort|sync|finish  # normal multi-server rollout sequence (finish is automatic if sync succeeds)
+        start|abort|release      # normal single-server rollout sequence (when you don't need a sync hook)
+        hotfix                   # Roll out the site with a hotfix (a.k.a. start without an automatic "git pull")
         revert                   # revert site to previous rollout (interactive - replaces start)
         manual-sync              # manual sync process (replaces sync - can be used for a gradual sync)
         show                     # show list of tags
-        show-tag                 # show the current tag (if it exists)
+        show-tag                 # show the currently deployed tag (if it exists)
         tag                      # create a tag for this commit (restricted to certain environments)
         log                      # during a rollout show log of changes since the last rollout
         diff                     # during a rollout show differences between previous rollout
-        status                   # show rollout status of current repository
 
 =head1 NAVIGATION
 
