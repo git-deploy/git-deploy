@@ -1097,9 +1097,10 @@ When you're happy with the state of things you want to sync out you
 tell git-deploy, which will create a tag to record in history that the
 current state is what you released.
 
-If your deployment environment is the same as your production environment
-you should do a release at this point. You have to set
-L</deploy.can-make-tags> to C<true> to use this:
+If your only have one server in this environment which runs directloy
+off the deployment repository you should do a release at this
+point. You have to set L</deploy.can-make-tags> to C<true> to use
+this:
 
     git-deploy release
 
