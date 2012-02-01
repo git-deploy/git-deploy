@@ -1,0 +1,73 @@
+* What is it, a tool to make deployments really easy
+
+  We've gone from deployments being hard one-off bullshit to doing 20
+  of them a day at least.
+
+* It's really adaptable
+
+  It's highly configurable and pluggable, we use it for deploying
+  everything from single-server environments to deploying our main web
+  server cluster.
+
+* What's the core concept behind it?
+
+  You have a tag in your repository corresponding to every rollout,
+  that's right, every single rollout.
+
+* What sort of tool is it?
+
+  It's a Unix tool, it does one thing and does it well, it's hookable,
+  the hooks are standard *nix programs, it runs anywhere Perl 5.8
+  runs.
+
+* How does it actually operate?
+
+** There's a locking phase
+
+*** Only one person can do rollouts at a time
+*** Rollouts are done from one repository
+*** This is your staging server
+*** Locks are just a .git/deploy/lock file
+
+** You can do anything you want after you're locked
+
+*** git-pull, we do this on start
+*** make new commits
+*** pull new commits
+*** You just have to push them before..
+*** You can "abort" at this point
+
+** You sync
+*** This is when you declare that the current state is the one you're syncing out
+*** It calls a sync hook, which YOU DEFINE
+
+** You finish the rollout
+*** Once the sync is done you "finish"
+*** On "sync" this is done for you on a successful "sync"
+*** If "sync" fails you manually fix it up, and do "finish" yourself
+
+* Why do you want to use this?
+
+** It's a revert tool as well as a rollback tool
+** You can see your entire deployment history at the git-level
+
+   <example of git-deploy show here>
+** It does really exhaustive error checking
+
+   added over years of trial and error as its inexperienced users have
+   tried to screw up rollouts in every way possible.
+** It ensures that the appropriate tags are created, and that they're pushed
+
+* What doesn't it do?
+
+** Worry about how your code is synced out, that's your job
+** This means you can use it with existing deployment solutions
+** Including ones you think might be incompatible
+
+* How do you sync out your code?
+
+** git push
+** rsync
+** Debian, RPM package etc. from the currnent code
+** GPG signed tarballs sent via SMTP
+** GPG signed tarballs sent via carrier pigeons
