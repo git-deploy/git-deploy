@@ -133,9 +133,9 @@ want instead is:
     git-deploy sync
 
 Which will create a tag and sync it out. How the "sync it out" part
-happens is B<completely up to you> (see L</Sync Hooks>), you can use
-everything from git itself to carrier pigeons, git-deploy doesn't
-care.
+happens is B<completely up to you> (see L</Sync Hooks>, or keep
+reading), you can use everything from git itself to carrier pigeons,
+git-deploy doesn't care.
 
 If the sync hook fails (e.g. because a gypsy ate your pigeon)
 git-deploy exits with an error and expects to you fix the situation.
@@ -194,7 +194,18 @@ repositories F<.gitignore> (which itself must then be committed)
 before you can proceed with using B<git-deploy>. You can disable this
 with --no-check if you're feeling adventurous.
 
-One thing it definitely doesn't do is worry about how your code
+One thing it definitely doesn't do is worry about how your code gets
+copied around to your production servers, that's completely up to you.
+
+If you have some way of copying around code to be deployed (git
+archive, rsync, building .deb or .rpm packages) that you use now you
+can and should continue using it.
+
+git-deploy solves the problem of making your deployment history
+available in a distributed way to everyone with a Git checkout, as
+well as making sure that there's an exclusive lock on deployments
+while they're in progress (although you could skip that part if you
+were feeling adventurous enough).
 
 =head2 Deploy Files
 
