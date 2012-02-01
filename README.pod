@@ -118,8 +118,8 @@ When you're happy with the state of things you want to sync out you
 tell git-deploy, which will create a tag to record in history that the
 current state is what you released.
 
-If your current both your deployment and production environment you
-should do a release at this point. You have to set
+If your deployment environment is the same as your production environment
+you should do a release at this point. You have to set
 L</deploy.can-make-tags> to C<true> to use this:
 
     git-deploy release
@@ -127,8 +127,9 @@ L</deploy.can-make-tags> to C<true> to use this:
 Which'll create a tag and push it, but it won't sync your code
 anywhere else.
 
-This is not a recommended way to use the tool since it's, what you
-want instead is:
+This is not a recommended way to use the tool since it's really intended
+to manage the process of pushing code out to multiple production boxes,
+so what you want instead is:
 
     git-deploy sync
 
@@ -137,7 +138,7 @@ happens is B<completely up to you> (see L</Sync Hooks>, or keep
 reading), you can use everything from git itself to carrier pigeons,
 git-deploy doesn't care.
 
-If the sync hook fails (e.g. because a gypsy ate your pigeon)
+If the sync hook fails (e.g. because a cat ate your pigeon)
 git-deploy exits with an error and expects to you fix the situation.
 
 Usually fixing it is a combination of running the sync hook manually
@@ -160,17 +161,25 @@ tool, it's so simple that we even allow designers to use it.
 
 So why do you need it? Well partly because we've been lying to you up
 until this point. The main feature of this tool is not actually doing
-rollouts, it's doing rollbacks.
+rollouts, it's doing reverts.
 
-When you inevitably fuck up a rollout you'll want to roll back as fast
+When you inevitably bork a rollout you'll want to undo as fast
 as possible, B<git-deploy> makes this really easy. You can run
 B<git-deploy show> to see a history of recent rollouts, you can use
 B<git-deploy revert> to interactively revert to a previous revision.
 
-When you manage to screw even this up and roll back the wrong thing
-B<git-deploy> makes it easy to see exactly where you went wrong,
-B<git-deploy show> will show you which of the several tags you've been
-jumping back and forth between correspond to the same revision.
+This means that you get presented with a list of things that were
+recently rolled out, and then have the chance to choose which should
+be rolled out as a replacement. Once you select the synchronization
+process is started and the bad code is replaced by whatever you have
+selected.
+
+When you manage to get even this wrong, and revert to the wrong commit
+B<git-deploy> makes it easy to see exactly what happend and what you
+did, B<git-deploy show> will show you which of the several tags you've
+been jumping back and forth between correspond to the same revision.
+Once have figured out which commit you should go to,
+use B<git-deploy revert> again to roll it out.
 
 The tool also does very exhaustive error checking added over years of
 trial and error as its inexperienced users have tried to screw up
@@ -394,8 +403,9 @@ the appropriate sync command for this app, as defined in F<deploy/sync/$app.sync
 =head2 abort
 
 A command which can be used any time prior to the manual synchronization step which will
-automatically rollback the current state to the start position. Note this is NOT the way
-to "rollback a rollout", it is the way to abort a rollout prior to its completion.
+automatically end the rollout, restore the git working directory from the current state
+to the start position. Note this is NOT the way to "rollback a rollout", it is the
+way to abort a rollout prior to its completion.
 
 I.e. if someone else has started a rollout and gone away you can do:
 
@@ -403,9 +413,6 @@ I.e. if someone else has started a rollout and gone away you can do:
 
 And the state of the rollout machine will be reset back to what it was
 before they ran C<git-deploy start>.
-
-Note that the "abort" command used to be called "rollback" but that term lead to a lot of
-confusion and we are trying to avoid it going forward.
 
 =head2 finish
 
@@ -470,7 +477,7 @@ want to roll out, so do:
 This will ensure that you are on your hotfix commit, and that any git hooks are
 executed. You should then TEST the code. On a webserver this normally involves
 
-    prodctl restart
+    httpd restart
 
 and then some manual testing of the relevant web site.
 
@@ -479,8 +486,8 @@ When you are satisfied that things are ok you can do execute the sync:
 
     git-deploy sync
 
-B<TODO>: The last 3 pull/push/reset steps are busywork that should be
-merged into C<git-deploy sync>.
+B<TODO>: The last 3 pull/push/reset steps are busywork that should be, and eventually
+will be merged into C<git-deploy sync>.
 
 =head2 manual-sync
 
@@ -641,9 +648,9 @@ F<deploy/sync/$app.sync> hook.
 After we've synced. Here you could e.g. send custom E-Mails indicating
 that the deployment was a success.
 
-=head3 post-rollback
+=head3 post-reset
 
-Hooks executed after a rollback, either via C<rollback> or
+Hooks executed after a reset, either via C<abort> or
 C<revert>. Most of the time you want to use C<post-tree-update> hooks
 instead, but this is useful e.g. for putting a staging server back
 into a load balancer.
@@ -652,12 +659,12 @@ into a load balancer.
 
 Executed after we update the working tree to a new revisions, whether
 that's after the C<pull> in the C<start> phase, after C<git reset
---hard> in the C<rollback> phase, or after a C<revert>.
+--hard> in the C<abort> phase, or after a C<revert>.
 
 Here's where hooks that e.g. restart the webserver and run any
 critical tests (e.g. config tests) should be run.
 
-The exit code from these hooks is ignored in actions like C<rollback>
+The exit code from these hooks is ignored in actions like C<abort>
 and C<revert>. We don't want the abort or revert to fail just
 because some webserver didn't restart.
 
