@@ -8,17 +8,17 @@ git-deploy - automate the git steps required for a deploying code from a git rep
     git deploy --man
 
     actions:
-        start|sync|finish|abort  # normal manual rollout sequence (finish is automatic if sync succeeds)
-        start|release|abort      # normal git-production env sequence
-        hotfix                   # Roll out the site with a hotfix (replaces start)
+        status                   # show rollout status of current repository
+        start|abort|sync|finish  # normal multi-server rollout sequence (finish is automatic if sync succeeds)
+        start|abort|release      # normal single-server rollout sequence (when you don't need a sync hook)
+        hotfix                   # Roll out the site with a hotfix (a.k.a. start without an automatic "git pull")
         revert                   # revert site to previous rollout (interactive - replaces start)
         manual-sync              # manual sync process (replaces sync - can be used for a gradual sync)
         show                     # show list of tags
-        show-tag                 # show the current tag (if it exists)
+        show-tag                 # show the currently deployed tag (if it exists)
         tag                      # create a tag for this commit (restricted to certain environments)
         log                      # during a rollout show log of changes since the last rollout
         diff                     # during a rollout show differences between previous rollout
-        status                   # show rollout status of current repository
 
 =head1 NAVIGATION
 
@@ -118,9 +118,10 @@ When you're happy with the state of things you want to sync out you
 tell git-deploy, which will create a tag to record in history that the
 current state is what you released.
 
-If your deployment environment is the same as your production environment
-you should do a release at this point. You have to set
-L</deploy.can-make-tags> to C<true> to use this:
+If your only have one server in this environment which runs directloy
+off the deployment repository you should do a release at this
+point. You have to set L</deploy.can-make-tags> to C<true> to use
+this:
 
     git-deploy release
 
