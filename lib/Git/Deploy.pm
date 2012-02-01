@@ -73,7 +73,7 @@ our @EXPORT= qw(
     _slurp
     init_gitdir
     log_directory
-    rollback_to_name
+    reset_to_name
 );
 
 our $DEBUG = $ENV{GIT_DEPLOY_DEBUG} || 0;
@@ -669,7 +669,7 @@ sub make_tag {
     _die "\$message not optional in 'make_tag'\n"
         if !@_;
 
-    # It is possible that rollback and rollout tags collide,
+    # It is possible that start and rollout tags collide,
     # at least while testing the script. So we play some suffix
     # games to make them unique. It's unlikely to ever happen in
     # practice as there is always a non trivial amount of time between
@@ -995,9 +995,9 @@ BEGIN {
     my $lockdirname= "deploy";
     my $lockfilename= "lock";
 
-    # additonally we maintain a file per rollout and rollback tag
+    # additonally we maintain a file per rollout and start tag
     # these files only existing during a rollout and are erased afterwards
-    my @tag_file_names= qw(rollout rollback);
+    my @tag_file_names= qw(rollout start);
 
     # utility sub, returns the lock_directory and the lockfilename for other subs
     # with some standard checking.
@@ -1081,7 +1081,7 @@ BEGIN {
     # write_rollout_status($dir,$status,$force,$other_checks)
     #
     # $dir is the directory to write the file to, a string.
-    # $status is the type of action we are performing, 'start','sync','finish','rollback'
+    # $status is the type of action we are performing, 'start','sync','finish','abort'
     # $force is a flag that overrides the security checks
     # $other_checks is a code ref of other checks that should be performed prior to creating
     # the file, it should die if the step should not proceed.
@@ -1169,7 +1169,7 @@ BEGIN {
             if ( $status eq 'finnish' ) {
                 $somethings_wrong->("git-deploy ole saatavilla suomeksi! (maybe you meant 'finish' instead?)");
             }
-            if ( $status eq 'rollback' ) {
+            if ( $status eq 'abort' ) {
                 if ( @file == 2 and $file[1] !~ /^(sync|release|manual-sync):/ ) {
                     $somethings_wrong->("Can't $status in the current state:");
                 }
@@ -1256,10 +1256,10 @@ sub check_for_unpushed_commits {
 }
 
 
-sub rollback_to_name {
+sub reset_to_name {
     my ( $name, $prefix )= @_;
     my ($rbinfo)= parse_rollout_status();
-    push_timings("gdt_internal__rollback_to_name__start");
+    push_timings("gdt_internal__reset_to_name__start");
     my @cmd;
     my $cur_branch= get_current_branch();
     if ( $rbinfo->{branch} ne $cur_branch ) {
@@ -1283,13 +1283,13 @@ sub rollback_to_name {
         phase   => $_,
         prefix  => $prefix,
 
-        # We don't want the rollback to fail just because the
+        # We don't want the abort to fail just because the
         # webserver didn't restart or something. This will warn if
         # the hooks fail, but will continue.
         ignore_exit_code => 1,
-    ) for qw(post-tree-update post-rollback);
+    ) for qw(post-tree-update post-reset);
 
-    push_timings("gdt_internal__rollback_to_name__end");
+    push_timings("gdt_internal__reset_to_name__end");
     return;
 }
 

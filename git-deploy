@@ -183,7 +183,7 @@ sub do_interactive_revert {
             $$rsubject= "Aborting revert of $prefix";
             $$rmessage= "$ENV{USER} has instructed git-deploy abort an automated revert of $prefix.\n\n"
                       . "The live tag is still: $printed[0]\n\n";
-            return "rollback";                # we dont want to roll out.
+            return "abort";                # we dont want to roll out.
         }
         undef $input if $input =~ /[^0-9]/ or $input < 1 or $input > @printed;
     } while !$input;
@@ -194,7 +194,7 @@ sub do_interactive_revert {
               . "We will revert to the code previously rolled out as tag $printed[$input-1]\n\n"
               . "NOTE that a new tag will be generated for the code when it is synchronzied.\n\n";
 
-    rollback_to_name( $printed[ $input - 1 ], $prefix );
+    reset_to_name( $printed[ $input - 1 ], $prefix );
     my $sync_hook= get_sync_hook( $prefix );
     if ($sync_hook) {
         return "sync";                        # they have a sync hook, so call it.
@@ -212,11 +212,11 @@ sub do_sync_with_sync_hook {
     my $push_action_if_ok                 = delete $args{push_action_if_ok};
     my $disable_further_actions_if_not_ok = delete $args{disable_further_actions_if_not_ok};
     my $sync_hook                         = delete $args{sync_hook} || die "Need sync_hook =>";
-    my $sync_is_rollback                  = delete $args{sync_is_rollback};
+    my $sync_is_abort                  = delete $args{sync_is_abort};
 
     my $ok= eval {
         $ENV{DEPLOY_ROLLOUT_TAG}    = $env->{rollout_tag};
-        $ENV{DEPLOY_ROLLBACK_TAG}   = $env->{rollback_tag};
+        $ENV{DEPLOY_ROLLBACK_TAG}   = $env->{start_tag};
         $ENV{DEPLOY_DEPLOY_FILE}    = $env->{deploy_file};
         $ENV{DEPLOY_DEPLOY_TEXT}    = $env->{deploy_text};
         $ENV{DEPLOY_ROLLOUT_PREFIX} = $env->{rollout_prefix};
@@ -225,7 +225,7 @@ sub do_sync_with_sync_hook {
         if ($push_action_if_ok and $push_action_if_ok eq "finish") {
             _say "Sync ran ok! Everything looks good! Automatically finishing\n";
             push @$actions => $push_action_if_ok;
-        } elsif ($sync_is_rollback) {
+        } elsif ($sync_is_abort) {
             _say "Sync back to starting point for rollout abort appeared to run ok\n";
         }
 
@@ -256,14 +256,14 @@ sub do_sync_with_sync_hook {
 }
 
 sub show_modified {
-    my ( $rollback_tag, $rollout_tag )= @_;
-    if ( !$rollback_tag ) {
+    my ( $start_tag, $rollout_tag )= @_;
+    if ( !$start_tag ) {
         return;
     }
     else {
         $rollout_tag ||= "";
     }
-    my @modified= `git diff --name-status $rollback_tag..$rollout_tag`;
+    my @modified= `git diff --name-status $start_tag..$rollout_tag`;
     my %counts;
     my %type_color= (
         'M' => { clr => COLOR_MODIFIED,   txt => 'Modified' },
@@ -329,14 +329,14 @@ my %legal_action= (
     none     => 'none',
     0        => 'none',
     ''       => 'none',
-    rollback => 'rollback',
-    oops     => 'rollback',
-    bail     => 'rollback',
+    abort => 'abort',
+    oops     => 'abort',
+    bail     => 'abort',
     1        => 'start',
     2        => 'sync',
     3        => 'finish',
-    4        => 'rollback',
-    abort    => 'rollback',
+    4        => 'abort',
+    abort    => 'abort',
     check    => 'check',
 
     # special
@@ -466,8 +466,8 @@ $list_count= 20 if !defined $list_count;
 # Handle --show and --list style options. This precludes any type of rollout step
 # from occuring.
 
-# read the rollback tag files from disk.
-my $rollback_tag= fetch_tag_info( 'rollback' );
+# read the start tag files from disk.
+my $start_tag= fetch_tag_info( 'start' );
 my $rollout_tag= fetch_tag_info( 'rollout' );
 
 # show options can not be mixed together ...
@@ -523,16 +523,16 @@ if ($show_deploy_file) {
 if ( $action eq 'status' ) {
     my $status= read_rollout_status();
     my $exit_val= 0;
-    if ( !$rollback_tag || !$status ) {
+    if ( !$start_tag || !$status ) {
         _say "No $prefix deployment currently in progress\n";
         $exit_val= 0;
     }
     elsif ( !$rollout_tag ) {
-        _say "$prefix rollout started - not synced yet ($rollback_tag)\n";
+        _say "$prefix rollout started - not synced yet ($start_tag)\n";
         $exit_val= 1;
     }
     else {
-        _say "$prefix rollout tagged - awaiting sync? ($rollback_tag..$rollout_tag)\n";
+        _say "$prefix rollout tagged - awaiting sync? ($start_tag..$rollout_tag)\n";
         $exit_val= 2;
     }
     if ($status) {
@@ -542,18 +542,18 @@ if ( $action eq 'status' ) {
 }
 my @extra= @ARGV;
 if ( $git_wrap{$action} ) {
-    if ( !$rollback_tag ) {
+    if ( !$start_tag ) {
         exit;
     }
     elsif ($rollout_tag) {
-        exec( "git", $action, @extra, "$rollout_tag..$rollback_tag" );
+        exec( "git", $action, @extra, "$rollout_tag..$start_tag" );
     }
     else {
-        exec( "git", $action, @extra, "$rollback_tag..HEAD" );
+        exec( "git", $action, @extra, "$start_tag..HEAD" );
     }
 }
 if ( $action eq 'modified' ) {
-    show_modified( $rollback_tag, $rollout_tag );
+    show_modified( $start_tag, $rollout_tag );
     exit;
 }
 if (@ARGV) {
@@ -642,7 +642,7 @@ if ( $action eq 'release' ) {
 while (@actions) {
     my $final_words= "";    #any messages to display at the end of the rollout - distinct from yay message
     my $action= shift @actions;
-    my $rollback_tag= fetch_tag_info( 'rollback' );
+    my $start_tag= fetch_tag_info( 'start' );
     my $rollout_tag= fetch_tag_info( 'rollout' );
     my ( $subject, $body );
     my $start_time= time;
@@ -655,7 +655,7 @@ while (@actions) {
         write_rollout_status(
             "start", $force,
             sub {
-                _checktag( $action, 'rollback', $rollback_tag, 0 );
+                _checktag( $action, 'start', $start_tag, 0 );
                 _checktag( $action, 'rollout',  $rollout_tag,  0 );
 
                 # these will die if there is a problem
@@ -666,21 +666,21 @@ while (@actions) {
             } );    # this will die if there is a problem
 
         # $list_all is always false here.
-        ($rollback_tag)= @{ do_get_name_list( $ignore_older_than, $list, $list_all, $include_branches ) };
+        ($start_tag)= @{ do_get_name_list( $ignore_older_than, $list, $list_all, $include_branches ) };
 
-        if ($rollback_tag) {
-            _info "Working directory was checked out to tag '$rollback_tag', will restore this tag on abort\n"
+        if ($start_tag) {
+            _info "Working directory was checked out to tag '$start_tag', will restore this tag on abort\n"
                 if $VERBOSE;
         }
         else {
             if ( !@message ) {
                 push @message, "tagged as restore point if you abort deployment procedure for $prefix";
             }
-            $rollback_tag= make_dated_tag( $prefix, $date_fmt, @message )
+            $start_tag= make_dated_tag( $prefix, $date_fmt, @message )
                 or _die "Failed to create tag!\n";
         }
-        store_tag_info( 'rollback', $rollback_tag );
-        my $sha1= get_commit_for_name($rollback_tag);
+        store_tag_info( 'start', $start_tag );
+        my $sha1= get_commit_for_name($start_tag);
         my $first_line;
         # these will die if there is a problem
         execute_deploy_hooks(
@@ -709,7 +709,7 @@ while (@actions) {
             $subject= "Starting live rollout of $prefix";
             $body=
                   "About to start rollout procedure for $prefix on $host\n\n"
-                . "The currently deployed checkout is $rollback_tag $sha1\n\n"
+                . "The currently deployed checkout is $start_tag $sha1\n\n"
                 . read_deploy_file($deploy_file_name);
         }
         elsif ( $action eq 'hotfix' ) {
@@ -719,7 +719,7 @@ while (@actions) {
 
             $subject= "Starting *hotfix* rollout of $prefix";
             $body= "A hotfix rollout procedure has begun for $prefix on $host\n\n"
-                 . "The initial state of the checkout is $rollback_tag $sha1\n\n"
+                 . "The initial state of the checkout is $start_tag $sha1\n\n"
                  . read_deploy_file($deploy_file_name);
         }
 
@@ -727,7 +727,7 @@ while (@actions) {
         if ( !@actions ) {
             _tell $first_line, "\n",
                 "If you want abandon this deploy use\n\n",
-                "  git-deploy rollback\n\n",
+                "  git-deploy abort\n\n",
                 "When you are ready to rollout use\n\n",
                 "  git-deploy sync\n\n",
                 "to continue with the rollout process.\n\n",
@@ -748,13 +748,13 @@ while (@actions) {
         write_rollout_status(
             $action, $force,
             sub {
-                _checktag( $action, 'rollback', $rollback_tag, 1 );
+                _checktag( $action, 'start', $start_tag, 1 );
                 _checktag( $action, 'rollout',  $rollout_tag,  0 );
 
                 my $commit_for_HEAD = get_commit_for_name("HEAD");
-                my $commit_for_rollback = get_commit_for_name($rollback_tag);
+                my $commit_for_start = get_commit_for_name($start_tag);
                 if ( $action ne 'release'
-                    and $commit_for_HEAD eq $commit_for_rollback  )
+                    and $commit_for_HEAD eq $commit_for_start  )
                 {
                     if ($force) {
                         _warn "--force enabling rolling out same thing you had when you started\n";
@@ -762,7 +762,7 @@ while (@actions) {
                     else {
                         _die "It seems like there is nothing to $action\n",
                             "The commit for HEAD ($commit_for_HEAD)\n",
-                            "Is the same as the rollback commit ($commit_for_rollback, tag $rollback_tag)\n",
+                            "Is the same as the start commit ($commit_for_start, tag $start_tag)\n",
                             "\n",
                             "If you really want to rollout the same thing ",
                             "you started with then use the --force option\n\n";
@@ -780,7 +780,7 @@ while (@actions) {
             } );
 
         if ( !@message ) {
-            push @message, "rollout of $prefix ($rollback_tag..%TAG)";
+            push @message, "rollout of $prefix ($start_tag..%TAG)";
         }
         $rollout_tag= make_dated_tag( $prefix, $date_fmt, @message )
             or _die "Failed to create tag!\n";
@@ -789,8 +789,8 @@ while (@actions) {
 
         $subject= "Syncing $prefix to $rollout_tag from $host";
 
-        my $shortlog_cmd= qq(git rev-list --pretty=short "$rollback_tag..$rollout_tag") . qq( | git shortlog);
-        my $diff_cmd= qq(git diff --stat $rollback_tag..$rollout_tag);
+        my $shortlog_cmd= qq(git rev-list --pretty=short "$start_tag..$rollout_tag") . qq( | git shortlog);
+        my $diff_cmd= qq(git diff --stat $start_tag..$rollout_tag);
         $body=
               "Syncing $prefix to $rollout_tag from $host\n\n"
             . read_deploy_file($deploy_file_name)
@@ -816,7 +816,7 @@ while (@actions) {
                 sync_hook => $sync_hook,
                 env => {
                     rollout_tag    => $rollout_tag,
-                    rollback_tag   => $rollback_tag,
+                    start_tag   => $start_tag,
                     deploy_file    => get_deploy_file_name($deploy_file_name),
                     deploy_text    => $deploy_text,
                     rollout_prefix => $prefix,
@@ -840,44 +840,44 @@ while (@actions) {
         );
 ######################################################
     }
-    elsif ( $action eq 'rollback' ) {
+    elsif ( $action eq 'abort' ) {
         should_write_timings();
 
         # this will die if there is a problem
         write_rollout_status(
             $action, $force,
             sub {
-                _checktag( $action, 'rollback', $rollback_tag, 1 );
+                _checktag( $action, 'abort', $start_tag, 1 );
             } );
 
-        _say "Rolling back to $rollback_tag\n";
-        rollback_to_name( $rollback_tag, $prefix );
+        _say "Rolling back to $start_tag\n";
+        reset_to_name( $start_tag, $prefix );
         my $deploy_text= "";
         if ( !$rollout_tag ) {
 
             #they havent synced yet
             $subject= "Aborted $prefix rollout";
-            $body= "Update of $prefix from $host has been aborted.\n\n" . "Servers are still at $rollback_tag\n\n";
+            $body= "Update of $prefix from $host has been aborted.\n\n" . "Servers are still at $start_tag\n\n";
             if ( !@message ) {
-                push @message, "Aborted rollout, returned to $rollback_tag";
+                push @message, "Aborted rollout, returned to $start_tag";
             }
-            $deploy_text= write_deploy_file( $rollback_tag, \@message, $deploy_file_name );
+            $deploy_text= write_deploy_file( $start_tag, \@message, $deploy_file_name );
         }
         else {
 
             # they did sync it
-            my $new_rollback_tag;
+            my $new_start_tag;
             if ( !@message ) {
-                push @message, "Aborted rollout of $rollout_tag, rolled back to $rollback_tag";
+                push @message, "Aborted rollout of $rollout_tag, rolled back to $start_tag";
             }
-            $new_rollback_tag= make_dated_tag( $prefix, $date_fmt, @message )
+            $new_start_tag= make_dated_tag( $prefix, $date_fmt, @message )
                 or _die "Failed to create tag!\n";
-            $deploy_text= write_deploy_file( $new_rollback_tag, \@message, $deploy_file_name );
+            $deploy_text= write_deploy_file( $new_start_tag, \@message, $deploy_file_name );
 
-            $subject= "Rollout of $rollout_tag has been aborted, rolled back to $rollback_tag!";
+            $subject= "Rollout of $rollout_tag has been aborted, rolled back to $start_tag!";
             $body=
                   "Update of $prefix from $host has been aborted.\n\n"
-                . "Servers will be rolled back to $rollback_tag with a new tag of $new_rollback_tag\n\n"
+                . "Servers will be rolled back to $start_tag with a new tag of $new_start_tag\n\n"
                 . "New deploy status:"
                 . read_deploy_file($deploy_file_name);
 
@@ -886,19 +886,19 @@ while (@actions) {
                 do_sync_with_sync_hook(
                     sync_hook => $sync_hook,
                     env => {
-                        rollout_tag    => $new_rollback_tag,
-                        rollback_tag   => $rollback_tag,
+                        rollout_tag    => $new_start_tag,
+                        start_tag   => $start_tag,
                         deploy_file    => get_deploy_file_name($deploy_file_name),
                         deploy_text    => $deploy_text,
                         rollout_prefix => $prefix,
                     },
                     actions => \@actions,
                 ) or do {
-                    $final_words= "Rollback of '$rollback_tag' has only been partially successful.\n"
-                                . "New tag '$new_rollback_tag' has not been fully synchronized.\n";
+                    $final_words= "Rollback of '$start_tag' has only been partially successful.\n"
+                                . "New tag '$new_start_tag' has not been fully synchronized.\n";
                 };
             } else {
-                _tell "You must execute the server update step yourself after rollback.\n";
+                _tell "You must execute the server update step yourself after start.\n";
             }
         }
         unlink_rollout_status_file();
@@ -909,7 +909,7 @@ while (@actions) {
         write_rollout_status(
             $action, $force,
             sub {
-                _checktag( $action, 'rollback', $rollback_tag, 1 );
+                _checktag( $action, 'start', $start_tag, 1 );
                 _checktag( $action, 'rollout',  $rollout_tag,  1 );
 
                 if ( get_commit_for_name("HEAD") ne get_commit_for_name($rollout_tag) ) {
@@ -924,7 +924,7 @@ while (@actions) {
         $subject= "Finished $prefix rollout";
         $body=
               "Update of $prefix from $host is now complete.\n\n"
-            . "Servers now updated from $rollback_tag to $rollout_tag\n\n"
+            . "Servers now updated from $start_tag to $rollout_tag\n\n"
             . read_deploy_file($deploy_file_name);
         unlink_rollout_status_file();
 
@@ -1097,8 +1097,8 @@ When you're happy with the state of things you want to sync out you
 tell git-deploy, which will create a tag to record in history that the
 current state is what you released.
 
-If your current both your deployment and production environment you
-should do a release at this point. You have to set
+If your deployment environment is the same as your production environment
+you should do a release at this point. You have to set
 L</deploy.can-make-tags> to C<true> to use this:
 
     git-deploy release
@@ -1106,8 +1106,9 @@ L</deploy.can-make-tags> to C<true> to use this:
 Which'll create a tag and push it, but it won't sync your code
 anywhere else.
 
-This is not a recommended way to use the tool since it's, what you
-want instead is:
+This is not a recommended way to use the tool since it's really intended
+to manage the process of pushing code out to multiple production boxes,
+so what you want instead is:
 
     git-deploy sync
 
@@ -1116,7 +1117,7 @@ happens is B<completely up to you> (see L</Sync Hooks>, or keep
 reading), you can use everything from git itself to carrier pigeons,
 git-deploy doesn't care.
 
-If the sync hook fails (e.g. because a gypsy ate your pigeon)
+If the sync hook fails (e.g. because a cat ate your pigeon)
 git-deploy exits with an error and expects to you fix the situation.
 
 Usually fixing it is a combination of running the sync hook manually
@@ -1139,17 +1140,25 @@ tool, it's so simple that we even allow designers to use it.
 
 So why do you need it? Well partly because we've been lying to you up
 until this point. The main feature of this tool is not actually doing
-rollouts, it's doing rollbacks.
+rollouts, it's doing reverts.
 
-When you inevitably fuck up a rollout you'll want to roll back as fast
+When you inevitably bork a rollout you'll want to undo as fast
 as possible, B<git-deploy> makes this really easy. You can run
 B<git-deploy show> to see a history of recent rollouts, you can use
 B<git-deploy revert> to interactively revert to a previous revision.
 
-When you manage to screw even this up and roll back the wrong thing
-B<git-deploy> makes it easy to see exactly where you went wrong,
-B<git-deploy show> will show you which of the several tags you've been
-jumping back and forth between correspond to the same revision.
+This means that you get presented with a list of things that were
+recently rolled out, and then have the chance to choose which should
+be rolled out as a replacement. Once you select the synchronization
+process is started and the bad code is replaced by whatever you have
+selected.
+
+When you manage to get even this wrong, and revert to the wrong commit
+B<git-deploy> makes it easy to see exactly what happend and what you
+did, B<git-deploy show> will show you which of the several tags you've
+been jumping back and forth between correspond to the same revision.
+Once have figured out which commit you should go to,
+use B<git-deploy revert> again to roll it out.
 
 The tool also does very exhaustive error checking added over years of
 trial and error as its inexperienced users have tried to screw up
@@ -1373,8 +1382,9 @@ the appropriate sync command for this app, as defined in F<deploy/sync/$app.sync
 =head2 abort
 
 A command which can be used any time prior to the manual synchronization step which will
-automatically rollback the current state to the start position. Note this is NOT the way
-to "rollback a rollout", it is the way to abort a rollout prior to its completion.
+automatically end the rollout, restore the git working directory from the current state
+to the start position. Note this is NOT the way to "rollback a rollout", it is the
+way to abort a rollout prior to its completion.
 
 I.e. if someone else has started a rollout and gone away you can do:
 
@@ -1382,9 +1392,6 @@ I.e. if someone else has started a rollout and gone away you can do:
 
 And the state of the rollout machine will be reset back to what it was
 before they ran C<git-deploy start>.
-
-Note that the "abort" command used to be called "rollback" but that term lead to a lot of
-confusion and we are trying to avoid it going forward.
 
 =head2 finish
 
@@ -1449,7 +1456,7 @@ want to roll out, so do:
 This will ensure that you are on your hotfix commit, and that any git hooks are
 executed. You should then TEST the code. On a webserver this normally involves
 
-    prodctl restart
+    httpd restart
 
 and then some manual testing of the relevant web site.
 
@@ -1458,8 +1465,8 @@ When you are satisfied that things are ok you can do execute the sync:
 
     git-deploy sync
 
-B<TODO>: The last 3 pull/push/reset steps are busywork that should be
-merged into C<git-deploy sync>.
+B<TODO>: The last 3 pull/push/reset steps are busywork that should be, and eventually
+will be merged into C<git-deploy sync>.
 
 =head2 manual-sync
 
@@ -1620,9 +1627,9 @@ F<deploy/sync/$app.sync> hook.
 After we've synced. Here you could e.g. send custom E-Mails indicating
 that the deployment was a success.
 
-=head3 post-rollback
+=head3 post-reset
 
-Hooks executed after a rollback, either via C<rollback> or
+Hooks executed after a reset, either via C<abort> or
 C<revert>. Most of the time you want to use C<post-tree-update> hooks
 instead, but this is useful e.g. for putting a staging server back
 into a load balancer.
@@ -1631,12 +1638,12 @@ into a load balancer.
 
 Executed after we update the working tree to a new revisions, whether
 that's after the C<pull> in the C<start> phase, after C<git reset
---hard> in the C<rollback> phase, or after a C<revert>.
+--hard> in the C<abort> phase, or after a C<revert>.
 
 Here's where hooks that e.g. restart the webserver and run any
 critical tests (e.g. config tests) should be run.
 
-The exit code from these hooks is ignored in actions like C<rollback>
+The exit code from these hooks is ignored in actions like C<abort>
 and C<revert>. We don't want the abort or revert to fail just
 because some webserver didn't restart.
 
