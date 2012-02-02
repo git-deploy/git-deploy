@@ -60,6 +60,79 @@
         </p>
       </article>
 
+      <article>
+        <h3>
+          It's not a one-size-fits-all solution
+        </h3>
+
+        <ul>
+          <li>
+            It's a *nix tool, it does one thing and does it well.
+          </li>
+          <li>
+            It's highly configurable and pluggable.
+          </li>
+        </ul>
+
+        <p>
+          We use it across drastically diverse environments,
+          everything from single-server environments to our main web
+          server cluster.
+        </p>
+      </article>
+
+      <article>
+        <h3>So how does it actually work</h3>
+
+        <ul class="build">
+          <li>
+            Rollouts are done from a designated git repository cloned
+            from your main repository.
+          </li>
+          <li>
+            Only one user can do a rollout at a time.
+          </li>
+          <li>
+            Once you've locked the deployment server you can perform
+            any git operation you want (<code>git
+            pull/commit/cherry-pick/reset</code>).
+          </li>
+          <li>
+            When you're ready you <i>sync</i>. This creates <b>a
+            tag</b>.
+          </li>
+          <li>
+            This calls <b>your</b> sync hook.
+          </li>
+          <li>
+            When that's done you <i>finish</i> which unlocks
+            deployments, pushes the tags, sends E-Mail etc.
+          </li>
+        </ul>
+      </article>
+
+      <article>
+        <h3>
+          So what does it actually do?
+        </h3>
+        <pre>
+$ git tag -l | grep ^cron- | tail -n 10
+cron-20120131-132746
+cron-20120131-154834
+cron-20120131-162155
+cron-20120131-163859
+cron-20120131-164816
+cron-20120201-111613
+cron-20120201-141449
+cron-20120201-150915
+cron-20120201-163202
+cron-20120201-165948
+        </pre>
+
+        <p>
+          It creates tags for every single rollout per-environment.
+        </p>
+      </article>
       
       <article>
         <h1 class='centered'>
