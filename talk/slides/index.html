@@ -52,7 +52,7 @@
           What is git-deploy?
         </h2>
 
-        <ul class='build'>
+        <ul>
           <li>
             A deployment tool conceived and introduced at Booking.com in 2008
           </li>
@@ -84,7 +84,7 @@
         <p>
           <img src='images/pushing_your_boundaries_1.jpg'>
         </p>
-        <ul class='build'>
+        <ul>
           <li>
             We use it to deploy around 20 environments.
           </li>
@@ -99,7 +99,7 @@
         <h3>
           What's the core concept behind it?
         </h3>
-        <ul class='build'>
+        <ul>
           <li>
             git-deploy will create an annotated git tag for all your
             rollouts.
@@ -119,7 +119,7 @@
       <article>
         <h3>So how does it actually work</h3>
 
-        <ul class="build">
+        <ul>
           <li>
             Rollouts are done from a designated git repository cloned
             from your main repository.
@@ -149,7 +149,7 @@
       <article>
         <h3>Step 1: <i>start</i></h3>
 
-        <ul class='build'>
+        <ul>
           <li>
             Creates a <code>.git/deploy/lock</code> file in your
             deployment repository.
@@ -220,7 +220,7 @@ $ git-deploy status
       <article>
         <h3>Step 2: <i>sync</i></h3>
 
-        <ul class='build'>
+        <ul>
           <li>
             This is when you've decided that what you have staged is
             good enough.
@@ -241,7 +241,7 @@ $ git-deploy status
       <article>
         <h3>Step 3: <i>finish</i></h3>
 
-        <ul class='build'>
+        <ul>
           <li>
             Run for you when <i>sync</i> finishes successfully, or
             manually if your <i>sync hook</i> had an error.
@@ -263,7 +263,7 @@ $ git-deploy status
         <h3>
           Why use it?
         </h3>
-        <ul class='build'>
+        <ul>
           <li>
             It makes reverts really easy. Helpful when you've just
             broken something.
@@ -290,7 +290,7 @@ $ git-deploy status
         <h3>
           What doesn't it do?
         </h3>
-        <ul class='build'>
+        <ul>
           <li>
             Worry about how your code is synced out, that's your job.
           </li>
