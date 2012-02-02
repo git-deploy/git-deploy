@@ -147,6 +147,108 @@
       </article>
 
       <article>
+        <h3>Step 1: <i>start</i></h3>
+
+        <ul class='build'>
+          <li>Creates a <code>.git/deploy/lock</code> file in your
+          deployment repository.</li>
+        </ul>
+
+        <pre>
+$ git-deploy status; echo $?
+# NOTE : No cron deployment currently in progress
+0
+</pre>
+
+<pre>
+$ git-deploy status; echo $?
+# NOTE : cron rollout started - not synced yet (offapp-20120201-170104)
+# NOTE : start: 2012-02-02 16:19:28     trunk   110bc23d8204dae87b2af259a02d47cd08711589        717     slanning
+1
+</pre>
+
+<pre>
+$ git-deploy start
+# INFO : git fetch --tags origin 
+# INFO : (not updating working directory)
+# INFO : git fetch origin 
+# INFO : (not updating working directory)
+# INFO : From git.booking.com:/gitroot/main
+# INFO :    0d9028e..65a8054  trunk      -> origin/trunk
+# INFO : Starting step 'start' at 2012-02-02 16-22-01
+# FATAL: You may not start a new rollout as it looks like one is already in progress!
+# FATAL: Failed to create lock dir '.git/deploy' because 'File exists'
+# FATAL: Log:
+# FATAL:        start:  2012-02-02 16:19:28     trunk   110bc23d8204dae87b2af259a02d47cd08711589        717     slanning
+</pre>
+
+<pre>
+$ git-deploy abort
+# INFO : git fetch --tags origin 
+# INFO : (not updating working directory)
+# INFO : git fetch origin 
+# INFO : (not updating working directory)
+# INFO : From git.booking.com:/gitroot/main
+# INFO :    65a8054..d79019a  trunk      -> origin/trunk
+# INFO : Starting step 'abort' at 2012-02-02 16-22-36
+# FATAL: Someone else is doing a rollout. You cannot proceed.
+# FATAL: Log:
+# FATAL:        start:  2012-02-02 16:19:28     trunk   110bc23d8204dae87b2af259a02d47cd08711589        717     slanning
+</pre>
+
+<pre>
+PROD cron mc02cronapp-01 main (trunk $<) $ git-deploy --force abort
+# INFO : git fetch --tags origin 
+# INFO : (not updating working directory)
+# INFO : git fetch origin 
+# INFO : (not updating working directory)
+# INFO : From git.booking.com:/gitroot/main
+# INFO :    d79019a..1fba73a  trunk      -> origin/trunk
+# INFO : Starting step 'abort' at 2012-02-02 16-23-07
+# NOTE : Rolling back to offapp-20120201-170104
+# NOTE : Rolled back to 'offapp-20120201-170104' succesfully
+# INFO : wrote deploy file 'lib/.deploy'
+# INFO : Not sending mail on action 'abort'. This can be configured with the 'send-mail-on-abort'
+# INFO : Step 'abort' finished. Started at 2012-02-02 16:23:07; took 1 seconds to complete
+# YAY  : 'abort' for 'cron' completed successfully
+# INFO : git push --tags origin 
+# INFO : (not updating working directory)
+# INFO : Everything up-to-date
+PROD cron mc02cronapp-01 main (trunk $<) $ git-deploy status
+# NOTE : No cron deployment currently in progress
+</pre>
+
+
+
+
+        <ul class="build">
+          <li>
+            Rollouts are done from a designated git repository cloned
+            from your main repository.
+          </li>
+          <li>
+            Only one user can do a rollout at a time.
+          </li>
+          <li>
+            Once you've locked the deployment server you can perform
+            any git operation you want (<code>git
+            pull/commit/cherry-pick/reset</code>).
+          </li>
+          <li>
+            When you're ready you <i>sync</i>. This creates <b>a
+            tag</b>.
+          </li>
+          <li>
+            This calls <b>your</b> sync hook.
+          </li>
+          <li>
+            When that's done you <i>finish</i> which unlocks
+            deployments, pushes the tags, sends E-Mail etc.
+          </li>
+        </ul>
+      </article>
+
+      <article>
         <h3>
           So what does it actually do?
         </h3>
