@@ -218,6 +218,48 @@ $ git-deploy status
       </article>
 
       <article>
+        <h3>Step 2: <i>sync</i></h3>
+
+        <ul class='build'>
+          <li>
+            This is when you've decided that what you have staged is
+            good enough.
+          </li>
+          <li>
+            It creates a tag to permanently tag this commit as having
+            been rolled out in this environment at this time.
+          </li>
+          <li>
+            Calls a <i>sync hook</i> that you define.
+          </li>
+          <li>
+            If your sync hook has an error at this point it's up to you to resolve it.
+          </li>
+        </ul>
+      </article>
+
+      <article>
+        <h3>Step 3: <i>finish</i></h3>
+
+        <ul class='build'>
+          <li>
+            Run for you when <i>sync</i> finishes successfully, or
+            manually if your <i>sync hook</i> had an error.
+          </li>
+          <li>
+            Pushes your shiny new tag to your main repository.
+          </li>
+          <li>
+            Sends out an E-Mail announcing your new rollout if you've
+            configured it to do so.
+          </li>
+          <li>
+            Unlocks the staging server so you can do another rollout.
+          </li>
+        </ul>
+      </article>
+
+      <article>
         <h3>
           So what does it actually do?
         </h3>
