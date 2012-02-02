@@ -605,7 +605,7 @@ if ($check_clean) {
 
 if ( $make_tag or $action eq 'tag' ) {
     _die "You aren't allowed to make tags for the prefix '$prefix'"
-        unless get_config_bool("can-make-tags",'false');
+        if get_config_bool("can-make-tags",'false');
     if ( !@message and $action eq 'tag' ) {
         if ( $prefix =~ /^(\w+?)_?prt$/ ) {
             push @message, "\U$1\E Production Readyness Test Release";
@@ -636,7 +636,7 @@ my $host= hostname();
 my @actions= ($action);
 if ( $action eq 'release' ) {
     _die "You arent allowed to use the 'release' action for the prefix '$prefix'"
-        unless get_config_bool("can-make-tags",'false');
+        if get_config_bool("can-make-tags",'false');
     push @actions, "finish";
 }
 while (@actions) {
