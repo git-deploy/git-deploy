@@ -261,26 +261,63 @@ $ git-deploy status
 
       <article>
         <h3>
-          So what does it actually do?
+          Why use it?
         </h3>
-        <pre>
-$ git tag -l | grep ^cron- | tail -n 10
-cron-20120131-132746
-cron-20120131-154834
-cron-20120131-162155
-cron-20120131-163859
-cron-20120131-164816
-cron-20120201-111613
-cron-20120201-141449
-cron-20120201-150915
-cron-20120201-163202
-cron-20120201-165948
-        </pre>
+        <ul class='build'>
+          <li>
+            It makes reverts really easy. Helpful when you've just
+            broken something.
+          </li>
 
-        <p>
-          It creates tags for every single rollout per-environment.
-        </p>
+          <li>
+            You can see your your entire deployment history at the git level.
+          </li>
+
+          <li>
+            It does really exhaustive error checking -- added over
+            years of trial and error as its inexperienced users have
+            tried to screw up rollouts in every way possible.
+          <li>
+
+          <li>
+            It ensures that the appropriate tags are created, and that
+            they're pushed.
+          </li>
+        </ul>
       </article>
+
+      <article>
+        <h3>
+          What doesn't it do?
+        </h3>
+        <ul class='build'>
+          <li>
+            Worry about how your code is synced out, that's your job.
+          </li>
+
+          <li>
+            <code>git push</code>
+          </li>
+
+          <li>
+             rsync it.
+          </li>
+
+          <li>
+            tar it up, gpg sign it and mail it around.
+          </li>
+
+          <li>
+            strap it to a pigeon.
+          </li>
+
+          <li>
+            This means you can most likely use it with your existing
+            deployment infrastructure.
+          </li>
+        </ul>
+      </article>
+
       
       <article>
         <h1 class='centered'>
