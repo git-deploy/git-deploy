@@ -71,3 +71,15 @@
 ** Debian, RPM package etc. from the currnent code
 ** GPG signed tarballs sent via SMTP
 ** GPG signed tarballs sent via carrier pigeons
+
+* Examples!
+
+** git-deploy status
+** git-deploy show
+** git-deploy start
+** git-deploy abort
+** git-deploy sync
+** an error!
+** git-deploy finish
+
+* Puppet-friendly Git-powered configuration`tm 
