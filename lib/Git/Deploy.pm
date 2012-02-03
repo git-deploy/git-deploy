@@ -197,37 +197,44 @@ sub _get_config {
             $repo_name_setting =~ s/^\Q$config_prefix\E\./${config_prefix}.repository $repo_name./;
             unshift @setting_internal_name => $repo_name_setting;
         }
-        SETTING_NAME: for my $setting_internal_name (@setting_internal_name) {
-              my $last = $setting_internal_name eq $setting_internal_name[-1];
+        SETTING_NAME:
+        for my $setting_internal_name (@setting_internal_name) {
+            my $last = $setting_internal_name eq $setting_internal_name[-1];
             CONF_SOURCE:
-              foreach my $source (
+            foreach my $source (
                   ($config_file && $setting=~/^\Q$config_prefix\E\./) 
                   ? ("--file $config_file","") 
                   : $setting=~/^user\./ 
                   ? ("--global") 
                   : ("") 
-              ) {   
-                  my $cmd= "git config $source --get $opts '$setting_internal_name'";
-                  my ($res,$error_code)= git_cmd($cmd);
-                  if ($error_code == 1) {
-                      if ($source=~/--file/) { # missing from our config file, but the rest? 
-                          next CONF_SOURCE;
-                      } elsif ($has_default) {
-                          $res= $default;
-                      } else {
-                          _die "Missing mandatory config setting $setting (internal name $setting_internal_name)" if $last;
-                      }
-                  } elsif ($error_code == 2) {
-                      _die "Bad config, multiple entries from $cmd: $res";
-                  } elsif ($error_code) {
-                      _die "Got unexpected error code $error_code from $cmd: $res";
-                  }
-                  $config{$setting}{$opts}= $res;
+            ) {
+                my $cmd= "git config $source --get $opts '$setting_internal_name'";
+                my ($res,$error_code)= git_cmd($cmd);
+                if ($error_code == 1) {
+                    if ($source=~/--file/) { # missing from our config file, but the rest?
+                        next CONF_SOURCE;
+                    } elsif ($has_default) {
+                        $res= $default;
+                    } else {
+                        _die "Missing mandatory config setting $setting (internal name $setting_internal_name)" if $last;
+                    }
+                } elsif ($error_code == 2) {
+                    _die "Bad config, multiple entries from $cmd: $res";
+                } elsif ($error_code) {
+                    _die "Got unexpected error code $error_code from $cmd: $res";
+                } elsif ( $res =~ m/\A\s*`\s*(.*)\s*`\s*\z/ ) {
+                    my $opt_cmd= $1;
+                    ($res, $error_code)= git_cmd($opt_cmd);
+                    if ( $error_code ) {
+                        die "config option $setting_internal_name = $res returned a non-zero exit code: $!\n";
+                    }
+                }
+                $config{$setting}{$opts}= $res;
 
-                  last SETTING_NAME if !$error_code and $res;
-                  last CONF_SOURCE;
-              }
-          }
+                last SETTING_NAME if !$error_code and $res;
+                last CONF_SOURCE;
+            }
+        }
     }
     return $config{$setting}{$opts};
 }
