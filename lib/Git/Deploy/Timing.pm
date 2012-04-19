@@ -51,7 +51,10 @@ sub write_timings {
     require Git::Deploy;
     return unless Git::Deploy::get_config_bool("log-timing-data",'false');
     # Where do we write it?
-    return unless my $log_directory = Git::Deploy::log_directory();
+    unless ( my $log_directory = Git::Deploy::log_directory() ) {
+        warn "Not writing timing data: 'log_directory' has not been configured.";
+        return;
+    }
 
     my $timing_file= "$log_directory/timing_gdt-$timings[0][1].txt";
     open my $fh, '>', $timing_file
