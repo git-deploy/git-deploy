@@ -51,7 +51,7 @@ sub write_timings {
     require Git::Deploy;
     return unless Git::Deploy::get_config_bool("log-timing-data",'false');
     # Where do we write it?
-    my $directory;
+    my $log_directory;
     unless ( $log_directory = Git::Deploy::log_directory() ) {
         warn "Not writing timing data: 'log_directory' has not been configured.";
         return;
