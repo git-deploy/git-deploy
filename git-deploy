@@ -684,8 +684,9 @@ while (@actions) {
         my $first_line;
         # these will die if there is a problem
         execute_deploy_hooks(
-            phase   => "pre-pull",
-            prefix  => $prefix,
+            phase     => "pre-pull",
+            prefix    => $prefix,
+            start_tag => $start_tag,
         );
         _info "Pruning dead remote branches";
         _info `git remote prune origin`;
@@ -703,8 +704,9 @@ while (@actions) {
 
             # these will die if there is a problem
             execute_deploy_hooks(
-                phase   => $_,
-                prefix  => $prefix,
+                phase     => $_,
+                prefix    => $prefix,
+                start_tag => $start_tag,
             ) for qw(post-pull post-tree-update);
             $subject= "Starting live rollout of $prefix";
             $body=
