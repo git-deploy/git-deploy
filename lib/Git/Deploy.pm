@@ -65,6 +65,7 @@ our @EXPORT= qw(
     write_deploy_file
     write_rollout_status
     execute_deploy_hooks
+    execute_log_hooks
     process_deploy_hooks
     execute_hook
     get_hook
@@ -1419,6 +1420,25 @@ sub execute_deploy_hooks {
     local $ENV{GIT_DEPLOYTOOL_HOOK_PREFIX} = $prefix;
     local $ENV{GIT_DEPLOY_HOOK_PREFIX}     = $prefix;
     process_deploy_hooks( $root, $prefix, $phase, $ignore_exit_code );
+}
+
+sub execute_log_hooks {
+    my (%args) = @_;
+
+    my $level            = $args{log_level}            || _die "Missing log_level argument";
+    my $message          = $args{log_message}          || _die "Missing log_message argument";
+    my $announce         = $args{log_announce}         || 0;
+    my $ignore_exit_code = exists $args{ignore_exit_code} ? $args{ignore_exit_code} : 1;
+
+    local $ENV{GIT_DEPLOY_LOG_LEVEL}    = $level;
+    local $ENV{GIT_DEPLOY_LOG_MESSAGE}  = $message;
+    local $ENV{GIT_DEPLOY_LOG_ANNOUNCE} = $announce;
+
+    execute_deploy_hooks(
+        phase            => "log",
+        ignore_exit_code => $ignore_exit_code,
+        %args,
+    );
 }
 
 sub log_directory {

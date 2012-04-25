@@ -691,12 +691,24 @@ while (@actions) {
         _info "Pruning dead remote branches";
         _info `git remote prune origin`;
         if ( $action eq 'revert' ) {
+            execute_log_hooks(
+                prefix       => $prefix,
+                log_announce => 1,
+                log_level    => "info",
+                log_message  => "Starting revert of '$prefix' from $start_tag"
+            );
             push @actions,
                 do_interactive_revert( $list_count, $prefix, $action, $ignore_older_than, $include_branches,
                     $deploy_file_name, \@message, \$subject, \$body );
             $first_line= "\nRevert procedure has started. You should now be checked out to the chosen commit.\n";
         }
         elsif ( $action eq 'start' ) {
+            execute_log_hooks(
+                prefix       => $prefix,
+                log_announce => 1,
+                log_level    => "info",
+                log_message  => "Starting rollout of '$prefix', previous rollout was $start_tag",
+            );
 
             pull( $remote_site, $remote_branch );
             $first_line= "\nDeploy procedure has started. You should now be checked out to the latest commit.\n"
@@ -715,6 +727,14 @@ while (@actions) {
                 . read_deploy_file($deploy_file_name);
         }
         elsif ( $action eq 'hotfix' ) {
+            execute_log_hooks(
+                prefix       => $prefix,
+                log_announce => 1,
+                log_level    => "info",
+                log_message  => "Starting hotfix of '$prefix', previous rollout was $start_tag",
+
+            );
+
             $first_line=
                   "\nHotfix deploy procedure has started. You are still checked out to the same commit as before.\n"
                 . "You should make, test, and commit whatever modifications you need.\n";
@@ -814,6 +834,13 @@ while (@actions) {
                   "session will be automatically 'finished' and you will be done.\n",
             ;
 
+            execute_log_hooks(
+                prefix       => $prefix,
+                log_announce => 1,
+                log_level    => "info",
+                log_message  => "$subject (replacing $start_tag)",
+            );
+
             do_sync_with_sync_hook(
                 sync_hook => $sync_hook,
                 env => {
@@ -864,6 +891,12 @@ while (@actions) {
                 push @message, "Aborted rollout, returned to $start_tag";
             }
             $deploy_text= write_deploy_file( $start_tag, \@message, $deploy_file_name );
+            execute_log_hooks(
+                prefix       => $prefix,
+                log_announce => 1,
+                log_level    => "info",
+                log_message  => "Aborting session, no synchronization performed",
+            );
         }
         else {
 
@@ -885,6 +918,12 @@ while (@actions) {
 
             if ( my $sync_hook= get_sync_hook( $prefix ) ) {
                 _info "Will automatically execute $sync_hook to update servers\n";
+                execute_log_hooks(
+                    prefix       => $prefix,
+                    log_announce => 1,
+                    log_level    => "info",
+                    log_message  => "Aborting rollout after a partial or full sync, will revert to previous state and sync it out",
+                );
                 do_sync_with_sync_hook(
                     sync_hook => $sync_hook,
                     env => {
@@ -900,6 +939,12 @@ while (@actions) {
                                 . "New tag '$new_start_tag' has not been fully synchronized.\n";
                 };
             } else {
+                execute_log_hooks(
+                    prefix       => $prefix,
+                    log_announce => 1,
+                    log_level    => "warning",
+                    log_message  => "Aborting rollout after a partial sync WITHOUT RESYNCING REVERTED CODE",
+                );
                 _tell "You must execute the server update step yourself after start.\n";
             }
         }
@@ -908,6 +953,12 @@ while (@actions) {
         ######################################################
     }
     elsif ( $action eq 'finish' ) {
+        execute_log_hooks(
+            prefix       => $prefix,
+            log_announce => 1,
+            log_level    => "info",
+            log_message  => "Finished rollout session",
+        );
         write_rollout_status(
             $action, $force,
             sub {
@@ -964,10 +1015,24 @@ while (@actions) {
     _info "Step '$action' finished. Started at ", strftime("%Y-%m-%d %H:%M:%S",localtime($start_time)),
           "; took ",(time - $start_time)," seconds to complete\n";
     if ($final_words) {
-        _warn "'$action' for '$prefix' had problems\n$final_words";
+        my $msg = "'$action' for '$prefix' had problems\n$final_words";
+        _warn $msg;
+        execute_log_hooks(
+            prefix       => $prefix,
+            log_announce => 1,
+            log_level    => "warning",
+            log_message  => $msg,
+        );
         exit(71);
     } else {
-        _yay "'$action' for '$prefix' completed successfully\n";
+        my $msg = "'$action' for '$prefix' completed successfully\n";
+        _yay $msg;
+        execute_log_hooks(
+            prefix       => $prefix,
+            log_announce => 1,
+            log_level    => "info",
+            log_message  => $msg,
+        ) if $action eq 'sync';
     }
 }
 
@@ -1655,6 +1720,32 @@ critical tests (e.g. config tests) should be run.
 The exit code from these hooks is ignored in actions like C<abort>
 and C<revert>. We don't want the abort or revert to fail just
 because a web server didn't restart.
+
+=head3 log
+
+Called at various points with log messages, these are just like normal
+phase hooks except they'll have a few extra environment variables set
+for them. By default we ignore the exit code of log hooks, because we
+don't want failure in logging to stop the deployment.
+
+=over
+
+=item GIT_DEPLOY_LOG_LEVEL
+
+The log level, the lowercase equivalent of the levels documented in
+L<syslog(3)> without the C<LOG_*> prefix, e.g. "info" or "warning".
+
+=item GIT_DEPLOY_LOG_MESSAGE
+
+A free-form log message that we're passing to the log hook
+
+=item GIT_DEPLOY_LOG_ANNOUNCE
+
+Whether this message should be announced. These are messages that are
+more important than others that you'd e.g. like to output to your IRC
+or Jabber deployment channel.
+
+=cut
 
 =head2 Return values
 
