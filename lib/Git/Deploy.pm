@@ -1407,6 +1407,9 @@ sub execute_deploy_hooks {
     local $ENV{GIT_DEPLOYTOOL_PHASE}  = $phase;
     local $ENV{GIT_DEPLOY_PHASE}      = $phase;
 
+    # the tag information, if provided
+    local $ENV{GIT_DEPLOY_START_TAG}  = $args{start_tag} if defined $args{start_tag};
+
     # the common 'app' is executed for everyone
     local $ENV{GIT_DEPLOYTOOL_HOOK_PREFIX} = 'common';
     local $ENV{GIT_DEPLOY_HOOK_PREFIX}     = 'common';
