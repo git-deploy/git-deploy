@@ -895,7 +895,7 @@ while (@actions) {
                 prefix       => $prefix,
                 log_announce => 1,
                 log_level    => "info",
-                log_message  => "Aborting session, no synchronization performed",
+                log_message  => "Aborting $prefix rollout, no synchronization performed",
             );
         }
         else {
