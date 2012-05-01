@@ -895,7 +895,7 @@ while (@actions) {
                 prefix       => $prefix,
                 log_announce => 1,
                 log_level    => "info",
-                log_message  => "Aborting session, no synchronization performed",
+                log_message  => "Aborting $prefix rollout, no synchronization performed",
             );
         }
         else {
@@ -922,7 +922,7 @@ while (@actions) {
                     prefix       => $prefix,
                     log_announce => 1,
                     log_level    => "info",
-                    log_message  => "Aborting rollout after a partial or full sync, will revert to previous state and sync it out",
+                    log_message  => "Aborting $prefix rollout after a partial or full sync, will revert to previous state and sync it out",
                 );
                 do_sync_with_sync_hook(
                     sync_hook => $sync_hook,
@@ -943,7 +943,7 @@ while (@actions) {
                     prefix       => $prefix,
                     log_announce => 1,
                     log_level    => "warning",
-                    log_message  => "Aborting rollout after a partial sync WITHOUT RESYNCING REVERTED CODE",
+                    log_message  => "Aborting $prefix rollout after a partial sync WITHOUT RESYNCING REVERTED CODE",
                 );
                 _tell "You must execute the server update step yourself after start.\n";
             }
@@ -957,7 +957,7 @@ while (@actions) {
             prefix       => $prefix,
             log_announce => 1,
             log_level    => "info",
-            log_message  => "Finished rollout session",
+            log_message  => "Finished $prefix rollout session",
         );
         write_rollout_status(
             $action, $force,
