@@ -1032,7 +1032,8 @@ while (@actions) {
             log_announce => 1,
             log_level    => "info",
             log_message  => $msg,
-        ) if $action eq 'sync';
+        ) if $action eq 'sync' or
+             $action eq 'manual-sync';
     }
 }
 
