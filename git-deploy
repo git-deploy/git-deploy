@@ -860,6 +860,13 @@ while (@actions) {
         }
         elsif ( $action ne 'release' ) {
             _tell "You must now hand execute the synchronization process and then execute git-deploy finish\n";
+
+            execute_log_hooks(
+                prefix       => $prefix,
+                log_announce => 1,
+                log_level    => "info",
+                log_message  => "sync step ignored for $prefix rollout - manual sync required",
+            );
         }
 
         # these will die if there is a problem - should they be executed if the sync failed?
