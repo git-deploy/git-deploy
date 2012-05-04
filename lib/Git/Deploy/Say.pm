@@ -84,8 +84,10 @@ use constant $ENV{WHITE_BACKGROUND}
     COLOR_MODECHG   => 'cyan',
     };
 
+use constant SKIP_LOGGING => $ENV{GIT_DEPLOY_SAY_SKIP_LOGGING};
 
 sub get_log_handle {
+    return \*STDOUT if SKIP_LOGGING;
     if (!$LOG_HANDLE) {
         if (!defined $LOG_FILE) {
             my $log_dir;
