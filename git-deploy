@@ -964,7 +964,7 @@ while (@actions) {
             prefix       => $prefix,
             log_announce => 1,
             log_level    => "info",
-            log_message  => "Finished $prefix rollout session",
+            log_message  => "Finished $prefix rollout session for $rollout_tag",
         );
         write_rollout_status(
             $action, $force,
@@ -1032,8 +1032,8 @@ while (@actions) {
         );
         exit(71);
     } else {
-        my $msg = "'$action' for '$prefix' completed successfully\n";
-        _yay $msg;
+        my $msg = "'$action' for '$prefix' completed successfully (now at $rollout_tag)";
+        _yay "$msg\n";
         execute_log_hooks(
             prefix       => $prefix,
             log_announce => 1,
