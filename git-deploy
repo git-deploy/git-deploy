@@ -809,12 +809,12 @@ while (@actions) {
         store_tag_info( 'rollout', $rollout_tag );
         my $deploy_text= write_deploy_file( $rollout_tag, \@message, $deploy_file_name );
 
-        $subject= "Syncing $prefix to $rollout_tag from $host";
+        $subject= "Syncing $prefix to $rollout_tag from $host (replacing $start_tag)";
 
         my $shortlog_cmd= qq(git rev-list --pretty=short "$start_tag..$rollout_tag") . qq( | git shortlog);
         my $diff_cmd= qq(git diff --stat $start_tag..$rollout_tag);
         $body=
-              "Syncing $prefix to $rollout_tag from $host\n\n"
+              "$subject\n\n"
             . read_deploy_file($deploy_file_name)
             . "\n-----------\n"
             . "Commits Involved (By Author):\n"
@@ -838,7 +838,7 @@ while (@actions) {
                 prefix       => $prefix,
                 log_announce => 1,
                 log_level    => "info",
-                log_message  => "$subject (replacing $start_tag)",
+                log_message  => $subject,
             );
 
             do_sync_with_sync_hook(
