@@ -929,7 +929,7 @@ while (@actions) {
                     prefix       => $prefix,
                     log_announce => 1,
                     log_level    => "info",
-                    log_message  => "Aborting $prefix rollout after a partial or full sync, will revert to previous state and sync it out",
+                    log_message  => "$prefix rollout aborted after a partial or full sync, syncing previous tag $start_tag (via rollback tag $new_start_tag)",
                 );
                 do_sync_with_sync_hook(
                     sync_hook => $sync_hook,
