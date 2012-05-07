@@ -1032,7 +1032,8 @@ while (@actions) {
         );
         exit(71);
     } else {
-        my $msg = "'$action' for '$prefix' completed successfully (now at $rollout_tag)";
+        my $msg = "'$action' for '$prefix' completed successfully";
+        $rollout_tag and $msg .= " (now at $rollout_tag)";
         _yay "$msg\n";
         execute_log_hooks(
             prefix       => $prefix,
