@@ -1248,7 +1248,7 @@ sub check_for_unpushed_commits {
             else {
                 _warn "Unpushed commit:\n";
             }
-            print `git log -1 $sha1`;
+            _print `git log -1 $sha1`;
         }
     }
     push_timings("gdt_internal__check_for_unpushed_commits__end");
