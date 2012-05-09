@@ -10,6 +10,7 @@ use Exporter qw(import);
 our @EXPORT = qw(
     git_deploy_test
     _run_git_deploy
+    _system
 );
 
 sub _system {

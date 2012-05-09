@@ -6,7 +6,7 @@ use Git::Deploy::Test;
 use Test::More 'no_plan';
 
 git_deploy_test(
-    "a simple 'status'",
+    "A rollout etc.",
     sub {
         my $ctx = shift;
         _run_git_deploy(
@@ -88,5 +88,114 @@ git_deploy_test(
             args => "status",
         );
         like(`cat $ctx->{last_stderr}`, qr/No debug deployment currently in progress/, "No deployment in progress");
+
+        # Now let's do another rollout, but this time we're making a
+        # local commit.
+        _run_git_deploy(
+            $ctx,
+            args => "start",
+        );
+        like(
+            `cat $ctx->{last_stderr}`,
+            qr/Step 'start' finished/,
+            "We finished the start step",
+        );
+        # Make a new local commit
+        _system "echo CHANGES >README.pod";
+        _system qq[git commit -m"This is a commit message" README.pod];
+        # It's going to be shown by "log"
+        _run_git_deploy(
+            $ctx,
+            args => "log",
+        );
+        like(
+            `cat $ctx->{last_stdout}`,
+            qr/This is a commit message/,
+            "We have stuff in 'log'",
+        );
+        # And we're going to show it in "diff"
+        _run_git_deploy(
+            $ctx,
+            args => "diff",
+        );
+        like(
+            `cat $ctx->{last_stdout}`,
+            qr/CHANGES/,
+            "We have stuff in 'diff'",
+        );
+        # Let's get the current tag
+        _run_git_deploy(
+            $ctx,
+            args => "show-tag",
+        );
+        my $before_rollout_tag = `cat $ctx->{last_stdout}`;
+        like $before_rollout_tag, qr/^debug-/, "The tag we had before rollout is <$before_rollout_tag>";
+        # Let's try to sync without having pushed
+        _run_git_deploy(
+            $ctx,
+            args => "sync",
+            wanted_exit_code => 1,
+        );
+        like(
+            `cat $ctx->{last_stderr}`,
+            qr/$_/,
+            "Should be in output: $_",
+        ) for
+            "It looks like there are unpushed commits",
+            "Most likely this is harmless";
+        like(
+            `cat $ctx->{last_stdout}`,
+            qr/This is a commit message/,
+            "We should get a commit message in the output",
+        );
+        # we still haven't synced
+        _run_git_deploy(
+            $ctx,
+            args => "status",
+            wanted_exit_code => 1,
+        );
+        like(`cat $ctx->{last_stderr}`, qr/debug rollout started - not synced yet/, "We note the correct status");
+        # let's push our commits
+        _system "git push";
+        # Let's sync
+        _run_git_deploy(
+            $ctx,
+            args => "sync",
+            wanted_exit_code => 0,
+        );
+        # And assert that we have the usual output (pasted from above)
+        like(
+            `cat $ctx->{last_stderr}`,
+            qr/You must now hand execute the synchronization process and then execute/,
+            "We don't have any sync hook yet"
+        );
+        like(
+            `cat $ctx->{last_stderr}`,
+            qr/$_/,
+            "Should be in output: $_",
+        ) for
+            "Step 'sync' finished",
+            "git push --tags origin",
+            "Not sending mail on action 'sync'",
+            "\[new tag\]";
+        # we've synced, but we still have to finish
+        _run_git_deploy(
+            $ctx,
+            args => "status",
+            wanted_exit_code => 2,
+        );
+        # finish and check for the usual output (pasted from above)
+        _run_git_deploy(
+            $ctx,
+            args => "finish",
+        );
+        like(
+            `cat $ctx->{last_stderr}`,
+            qr/$_/,
+            "Should be in output: $_"
+        ) for
+            "Looks like you are all done! Have a nice day",
+            "git push --tags origin",
+            "Step 'finish' finished.";
     }
 );
