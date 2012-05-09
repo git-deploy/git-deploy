@@ -34,7 +34,14 @@ use lib $GIT_DEPLOY_LIB;
 use Git::Deploy::Timing qw(
     push_timings
     should_write_timings
+    write_timings
 );
+local $SIG{__DIE__} = sub {
+    print STDERR "@_";
+    push_timings("gdt_end");
+    write_timings();
+    exit 1;
+};
 use Git::Deploy::Say;
 use Git::Deploy;
 
@@ -1048,6 +1055,9 @@ while (@actions) {
 # and push any tags that might have been created
 push_timings("gdt_push_tags");
 push_tags( $remote_site );
+
+push_timings("gdt_end");
+write_timings();
 
 exit(0);
 

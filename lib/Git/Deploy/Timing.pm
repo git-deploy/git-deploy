@@ -7,6 +7,7 @@ use Time::HiRes;
 our @EXPORT = qw(
     push_timings
     should_write_timings
+    write_timings
 );
 
 our (@timings, $write_timings, @real_argv);
@@ -68,20 +69,6 @@ sub write_timings {
         print $fh join("\t",@$timing),"\n";
     }
     close $fh;
-}
-
-END {
-    # We will execute this at process termination so long as we dont exit via POSIX::_exit(),
-    # which we don't/shouldn't use. This guarantees that we write stuff out no matter how we terminate.
-    push_timings("gdt_end");
-    write_timings();
-
-    # I have no idea why but for some reason on e.g. 'sync' with
-    # unpushed commits we show the same symptoms that you'd get with:
-    ##
-    ## perl -wle 'die "fuuu"; END { print "would exit with: $?"; exit 256 } '; echo $?
-    ##
-    exit $? >> 8 if $? > 255;
 }
 
 1;
