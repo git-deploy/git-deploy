@@ -75,6 +75,13 @@ END {
     # which we don't/shouldn't use. This guarantees that we write stuff out no matter how we terminate.
     push_timings("gdt_end");
     write_timings();
+
+    # I have no idea why but for some reason on e.g. 'sync' with
+    # unpushed commits we show the same symptoms that you'd get with:
+    ##
+    ## perl -wle 'die "fuuu"; END { print "would exit with: $?"; exit 256 } '; echo $?
+    ##
+    exit $? >> 8 if $? > 255;
 }
 
 1;
