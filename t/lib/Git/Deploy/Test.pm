@@ -68,8 +68,8 @@ sub git_deploy_test {
 
         # Can we copy the git dir?
         ok(-d $git_dir, "The <$git_dir> exists");
-        _system "git clone $ctx->{git_dir} swamp-1 >/dev/null 2>&1";
-        _system "git clone swamp-1 swamp-2 >/dev/null 2>&1";
+        _system "git clone --bare $ctx->{git_dir} swamp-1 >/dev/null 2>&1";
+        _system "git clone --bare swamp-1 swamp-2 >/dev/null 2>&1";
         _system "git clone swamp-2 swamp-3 >/dev/null 2>&1";
         ok(-d $_, "We created $_") for qw(swamp-1 swamp-2 swamp-3);
 
