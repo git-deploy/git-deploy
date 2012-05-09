@@ -29,7 +29,7 @@ git_deploy_test(
         _run_git_deploy(
             $ctx,
             args => "sync",
-            wanted_exit_code => 0,
+            wanted_exit_code => 1,
         );
         like(
             `cat $ctx->{last_stderr}`,
