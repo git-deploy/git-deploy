@@ -165,7 +165,7 @@ sub do_get_name_list {
 }
 
 sub do_interactive_revert {
-    my ( $list_count, $prefix, $action, $ignore_older_than, $include_branches, $deploy_file_name, $message, $rsubject, $rmessage  )=
+    my ( $list_count, $prefix, $action, $ignore_older_than, $include_branches, $deploy_file_name, $message, $rsubject, $rmessage, $revert_choice  )=
         @_;
     my $tags= do_get_name_list( $ignore_older_than, 1, 1, $include_branches );
     _print colored( ['bold cyan'], "The following commits are available to revert the site to:" ), "\n";
@@ -183,16 +183,29 @@ sub do_interactive_revert {
     my $input;
     do {
         _print colored( ['bold cyan'],
-            "Please select a commit from 1-" . ( 0 + @printed ) . " to revert to, or 'quit' to not do anything: " );
-        chomp( $input= <> );
-        _log( "input: '$input'");
+            $revert_choice
+            ? "You've selected the choice <$revert_choice> from the above list\n"
+            : "Please select a commit from 1-" . ( 0 + @printed ) . " to revert to, or 'quit' to not do anything: " );
+        if ($revert_choice) {
+            $input = $revert_choice;
+        } else {
+            chomp( $input= <> );
+            _log( "input: '$input'");
+        }
         if ( lc($input) eq 'quit' ) {
             $$rsubject= "Aborting revert of $prefix";
             $$rmessage= "$ENV{USER} has instructed git-deploy abort an automated revert of $prefix.\n\n"
                       . "The live tag is still: $printed[0]\n\n";
             return "abort";                # we dont want to roll out.
         }
-        undef $input if $input =~ /[^0-9]/ or $input < 1 or $input > @printed;
+        if ($input =~ /[^0-9]/ or $input < 1 or $input > @printed) {
+            if ($revert_choice) {
+                _error "Your revert choice of '$input' is invalid, aborting revert, try again";
+                return "abort";
+            } else {
+                undef $input;
+            }
+        }
     } while !$input;
     _tell("Will revert code to tag $printed[$input-1]");
     $$rsubject= "Reverting $prefix from $printed[0] to $printed[$input-1]";
@@ -371,6 +384,9 @@ my %git_wrap= (
     'log'  => 1,
 );
 
+my %custom_options= (
+    'revert' => 1,
+);
 
 Getopt::Long::Configure( "require_order", "bundling" );
 GetOptions(
@@ -414,7 +430,7 @@ pod2usage( -exitstatus => 0, -verbose => 2 ) if $man;
 
 my $action= shift @ARGV;
 $action= "" if !defined $action;
-if ( @ARGV and !$git_wrap{$action} ) {
+if ( @ARGV and !$git_wrap{$action} and !$custom_options{$action}) {
     my $p= shift @ARGV;
     $prefix ||= $p;
 }
@@ -563,6 +579,12 @@ if ( $action eq 'modified' ) {
     show_modified( $start_tag, $rollout_tag );
     exit;
 }
+my $revert_choice;
+if ( $action eq 'revert' ) {
+    if (@ARGV) {
+        $revert_choice = shift @ARGV;
+    }
+}
 if (@ARGV) {
     pod2usage("Too many arguments.");
 }
@@ -706,7 +728,7 @@ while (@actions) {
             );
             push @actions,
                 do_interactive_revert( $list_count, $prefix, $action, $ignore_older_than, $include_branches,
-                    $deploy_file_name, \@message, \$subject, \$body );
+                    $deploy_file_name, \@message, \$subject, \$body, $revert_choice );
             $first_line= "\nRevert procedure has started. You should now be checked out to the chosen commit.\n";
         }
         elsif ( $action eq 'start' ) {

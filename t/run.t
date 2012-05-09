@@ -197,5 +197,28 @@ git_deploy_test(
             "Looks like you are all done! Have a nice day",
             "git push --tags origin",
             "Step 'finish' finished.";
+        # let's revert to a previous commit
+        _run_git_deploy(
+            $ctx,
+            args => "revert 2",
+        );
+        # checking output
+        like(
+            `cat $ctx->{last_stdout} && cat $ctx->{last_stderr} `,
+            qr/$_/,
+            "Should be in output: $_"
+        ) for
+            "You've selected the choice <2>",
+            "The following commits are available";
+        # let's finish the revert
+        _run_git_deploy(
+            $ctx,
+            args => $_
+        ) for qw(sync finish);
+        like(
+            `git rev-list $before_rollout_tag..`,
+            qr/^$/,
+            "We're now back to where we started out"
+        );
     }
 );
