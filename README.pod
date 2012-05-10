@@ -805,7 +805,7 @@ Whether this message should be announced. These are messages that are
 more important than others that you'd e.g. like to output to your IRC
 or Jabber deployment channel.
 
-=cut
+=back
 
 =head2 Return values
 
