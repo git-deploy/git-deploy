@@ -1598,6 +1598,16 @@ L<git-config(1)> for details:
 
 And these are L<git-deploy(1)>-specific options:
 
+=head3 deploy.log-directory
+
+This is a directory where we emit a F<git-deploy.log> file and if
+C<deploy.log-timing-data> is true we'll also emit timing data there.
+
+=head3 deploy.log-timing-data
+
+A boolean option that configures whether or not we log timing data,
+off by default.
+
 =head3 deploy.block-file
 
 A path to a file which if existent will block rollouts,

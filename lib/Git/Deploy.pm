@@ -1442,7 +1442,7 @@ sub execute_log_hooks {
 }
 
 sub log_directory {
-    my $log_directory = get_config_path("log-directory", '');
+    my $log_directory = get_config_path("log-directory", '/tmp');
     return unless $log_directory;
     return $log_directory;
 }

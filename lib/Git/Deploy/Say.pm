@@ -90,13 +90,7 @@ sub get_log_handle {
     return \*STDOUT if SKIP_LOGGING;
     if (!$LOG_HANDLE) {
         if (!defined $LOG_FILE) {
-            my $log_dir;
-            for my $d ("/var/log/deploy","/tmp") {
-                if (-d $d) {
-                    $log_dir= $d;
-                    last;
-                }
-            }
+            my $log_dir = Git::Deploy::log_directory();
             $LOG_FILE= $log_dir . "/git-deploy.log";
         }
 
