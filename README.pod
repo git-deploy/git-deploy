@@ -498,6 +498,15 @@ they have deemed the rollout to be complete.
 
 =head1 CONFIGURATION
 
+git-deploy uses L<git(1)> to drive its configuration. This means that
+if you're rolling out a given repository situated at F</some/path> you
+can configure everything in F</some/path/.git/config> with
+L<git-config(1)>.
+
+We use the namespace C<deploy> for our configuration. See this section
+for an overview of our configuration options, but you can also jump to
+L</EXAMPLE CONFIGURATION> for an example of how to configure the tool.
+
 These are L<git(1)> config options that need to be set, see
 L<git-config(1)> for details:
 
@@ -510,6 +519,16 @@ L<git-config(1)> for details:
 =back
 
 And these are L<git-deploy(1)>-specific options:
+
+=head3 deploy.log-directory
+
+This is a directory where we emit a F<git-deploy.log> file and if
+C<deploy.log-timing-data> is true we'll also emit timing data there.
+
+=head3 deploy.log-timing-data
+
+A boolean option that configures whether or not we log timing data,
+off by default.
 
 =head3 deploy.block-file
 
@@ -554,8 +573,9 @@ you can use to test the tool.
 
 =head3 deploy.support-email
 
-An e-mail address we'll tell the user to contact if something goes
-horribly wrong.
+An e-mail address we'll tell the user to contact if the sync hook
+fails. This'll be in the big "DON'T PANIC" message that we emit if the
+sync hook fails.
 
 =head3 deploy.mail-tool
 
@@ -575,6 +595,92 @@ to.
 A boolean option that configures when we send
 mail. E.g. C<deploy.send-mail-on-start = true> will have mail sent
 when we do "git-deploy start".
+
+=head3 deploy.repo-name-detection
+
+The strategy we'll use to detect the current repository
+name. Currently only C<dot-git-parent-dir> is supported. See the
+L</EXAMPLE CONFIGURATION> for how this is used.
+
+=head1 EXAMPLE CONFIGURATION
+
+Here's an example git-deploy configuration that can deal with rolling
+out more than one repository on a given box with a globally maintained
+config file. First we set up C<deploy.config-file> in
+F</etc/gitconfig>:
+
+    $ cat /etc/gitconfig
+    [deploy]
+            config-file = /etc/git-deploy.conf
+
+Then we configure git-deploy in the F</etc/git-deploy.conf> to roll
+out two repositories, F</repo/code> and F</repo/static_assets>:
+
+    $ cat /etc/git-deploy.conf
+    ;; Global options
+    [deploy]
+            ;; Force users to have this umask
+            restrict-umask = 0002
+
+            ;; If this file exists all rollouts are blocked
+            rollouts-blocked = /etc/ROLLOUTS_BLOCKED
+
+            ;; E-Mail addresses to complain to when stuff goes wrong
+            support-email = admins@example.com, infrastructure@example.com
+
+            ;; What strategy should we use to detect the repo name?
+            repo-name-detection = dot-git-parent-dir
+
+            ;; Where should the mail configured below go?
+            announce-mail = announce@example.com
+
+            ;; When should we send an E-Mail?
+            send-mail-on-sync   = true
+            send-mail-on-revert = true
+
+            ;; Where to store the timing information
+            log-directory = /var/log/deploy
+
+            ;; We want timing information
+            log-timing-data = true
+
+    ;; Per-repo options, keys here override equivalent keys in the
+    ;; global options
+
+    [deploy "repository code"]
+            ;; Prefix to give to tags created here. A prefix of 'debug'
+            ;; will result in debug-YYYYMMDD-HHMMSS tags
+            tag-prefix = app
+
+            ;; In code.git we put the .deploy file in lib/.deploy. this is
+            ;; because traditionally we only sync out the lib
+            ;; folder.
+            deploy-file = lib/.deploy
+
+            ;; Where the git-deploy hooks live
+            hook-dir = /repos/hooks/git-deploy-data/deploy-code
+
+    [deploy "repository static_assets"]
+            ;; Prefix to give to tags created here. A prefix of 'debug'
+            ;; will result in debug-YYYYMMDD-HHMMSS tags
+            tag-prefix = app_tmpl
+
+            ;; We sync out this whole repository
+            deploy-file = .deploy
+
+            ;; Where the git-deploy hooks live
+            hook-dir = /repos/hooks/git-deploy-data/deploy-static_assets
+
+Notice how they have sections of their own later in the config file,
+these sections only apply to them using the
+C<deploy.repo-name-detection> logic, any values in the per-repo
+sections override the corresponding deploy.* values.
+
+Since we're using the C<dot-git-parent-dir> strategy for
+C<deploy.repo-name-detection> running git-deploy inside F</repo/code>
+will cause us to pick up the "repository code" section of the
+configuration. I.e. we're using the name of the parent folder of our
+F<.git> directory.
 
 =head1 WRITING DEPLOY HOOKS
 
@@ -674,6 +780,32 @@ critical tests (e.g. config tests) should be run.
 The exit code from these hooks is ignored in actions like C<abort>
 and C<revert>. We don't want the abort or revert to fail just
 because a web server didn't restart.
+
+=head3 log
+
+Called at various points with log messages, these are just like normal
+phase hooks except they'll have a few extra environment variables set
+for them. By default we ignore the exit code of log hooks, because we
+don't want failure in logging to stop the deployment.
+
+=over
+
+=item GIT_DEPLOY_LOG_LEVEL
+
+The log level, the lowercase equivalent of the levels documented in
+L<syslog(3)> without the C<LOG_*> prefix, e.g. "info" or "warning".
+
+=item GIT_DEPLOY_LOG_MESSAGE
+
+A free-form log message that we're passing to the log hook
+
+=item GIT_DEPLOY_LOG_ANNOUNCE
+
+Whether this message should be announced. These are messages that are
+more important than others that you'd e.g. like to output to your IRC
+or Jabber deployment channel.
+
+=cut
 
 =head2 Return values
 
