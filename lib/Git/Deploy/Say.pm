@@ -118,7 +118,10 @@ sub __say(@) {
     my $color= shift;
     my $msg= _msg( @_ );
     __log($msg);
-    print STDERR colored $color, $msg;
+    eval {
+        print STDERR colored $color, $msg;
+        1;
+    } or Carp::confess("wtf! $@");
 }
 
 sub _log(@) {
