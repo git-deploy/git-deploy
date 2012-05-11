@@ -124,7 +124,10 @@ sub __say(@) {
     my $color= shift;
     my $msg= _msg( @_ );
     __log($msg);
-    print STDERR colored $color, $msg;
+    eval {
+        print STDERR colored $color, $msg;
+        1;
+    } or Carp::confess("wtf! $@");
 }
 
 sub _log(@) {
@@ -155,7 +158,7 @@ sub _die(@) {
     # very bad
     my $msg= _msg( "# FATAL:", @_ );
     __log($msg);
-    __say colored [COLOR_DIE], $msg;
+    __say [COLOR_DIE], $msg;
     # just C<die;> instead of giving it the message, so it won't show
     # this line number in the die.
     die;
