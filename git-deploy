@@ -798,6 +798,7 @@ while (@actions) {
                 execute_deploy_hooks(
                     phase   => "pre-sync",
                     prefix  => $prefix,
+                    start_tag => $start_tag,
                 );
             } );
 
@@ -873,6 +874,8 @@ while (@actions) {
         execute_deploy_hooks(
             phase   => "post-sync",
             prefix  => $prefix,
+            start_tag => $start_tag,
+            rollout_tag => $rollout_tag,
         );
 ######################################################
     }

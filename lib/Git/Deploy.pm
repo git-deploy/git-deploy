@@ -1410,6 +1410,7 @@ sub execute_deploy_hooks {
 
     # the tag information, if provided
     local $ENV{GIT_DEPLOY_START_TAG}  = $args{start_tag} if defined $args{start_tag};
+    local $ENV{GIT_DEPLOY_ROLLOUT_TAG}  = $args{rollout_tag} if defined $args{rollout_tag};
 
     # the common 'app' is executed for everyone
     local $ENV{GIT_DEPLOYTOOL_HOOK_PREFIX} = 'common';
