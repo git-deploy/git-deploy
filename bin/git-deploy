@@ -1453,10 +1453,6 @@ wont match.
 Make a tag. This is the same as the "tag" action except the tag will not be automatically
 pushed.
 
-B<Note:> that you cannot use this function in/for all environments.
-
-If you think your environment should be allowed contact the author.
-
 =item B<--no-check-clean>
 
 Do not check that the working directory is clean before doing things.
