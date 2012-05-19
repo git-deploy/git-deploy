@@ -1,4 +1,8 @@
 #!/usr/bin/perl
+
+# ABSTRACT: automate the git steps required for a deploying code from a git repository
+# PODNAME: git-deploy
+
 use strict;
 use warnings;
 

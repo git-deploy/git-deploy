@@ -52,7 +52,7 @@ sub git_deploy_test {
     my $git_dir = catdir($cwd, $short_git_dir);
     my $ctx = {
         git_dir    => $git_dir,
-        git_deploy => "$^X -I$cwd/git-deploy-lib $cwd/git-deploy",
+        git_deploy => "$^X -I$cwd/git-deploy-lib $cwd/bin/git-deploy",
     };
 
     subtest $name => sub {
