@@ -1,0 +1,47 @@
+=head1 Design Objectives
+
+=over 4
+
+=item Use configuration not auto-detection
+
+One problem with the ancestor of C<git-deploy> was that in a misguided attempt to
+make things easier it attempted to do a lot of auto-detection. In hindsight
+this was almost definitely counter productive.  It neither made it easier for
+the users, nor for the developers. C<git-deploy> should avoid this mistake
+and use explicit configuration for everything it does .
+
+=item Delegate and not implement
+
+C<git-deploy> is intended to I<manage> the rollout process, not to actually
+be responsible for every action. An example would be the process of copying the
+tree to another host, which will always be the responsibility of a some other
+tool, although may/will be managed by C<git-deploy>
+
+The part of the job that C<git-deploy> should implement is anything involving
+most aspects of managing git, interacting with the user, configuration, 
+providing locks and logging, etc. Everything else should be delegated. 
+
+So for instance a check that the git tree does not contain unpushed commits is 
+something that C<git-deploy> should know how to do, but it should not directly 
+know how to restart a webserver. It is ok if the C<git-deploy> package provides 
+ready made hooks that do things like this, which the user can then configure to
+be used, but they should never be part of the core behaviour of C<git-deploy> 
+itself.
+
+=item Always design for the complex case
+
+In general C<git-deploy> is intended for managing rolling out many servers
+in a multi-step process that involves some level of user management. While
+it does provide tools for simpler scenarios, any feature it implements should
+generally "fit" into that general process.
+
+=item Every rolled out commit should be reachable from the primary branch.
+
+In general git-deploy is  designed with the premise that we should always
+be able to "reach" a rolled out commit from git via git-log. It is possible
+that this is too restrictive and that it needs to be reconsidered, but it
+does make life easier as a dev.
+
+=back 4
+
+
