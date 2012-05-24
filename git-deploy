@@ -958,6 +958,12 @@ while (@actions) {
                 _tell "You must execute the server update step yourself after start.\n";
             }
         }
+
+        execute_deploy_hooks(
+            phase   => "post-abort",
+            prefix  => $prefix,
+        );
+
         unlink_rollout_status_file();
 
         ######################################################
@@ -1712,6 +1718,10 @@ F<deploy/sync/$app.sync> hook.
 
 After we've synced. Here you could e.g. send custom e-mails indicating
 that the deployment was a success.
+
+=head3 post-abort
+
+Hooks executed after an C<abort>.
 
 =head3 post-reset
 
