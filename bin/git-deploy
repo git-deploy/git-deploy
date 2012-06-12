@@ -521,7 +521,12 @@ if ($show_hook_dir) {
 }
 if ($show_deploy_file) {
     $deploy_file_name ||= get_deploy_file_name();
-    my $deploy_file_text= read_deploy_file($deploy_file_name);
+
+    # skip the .deploy == HEAD equality check when we've just started a rollout
+    my $skip_validity_check= ( $start_tag && !$rollout_tag ) ? 1 : 0;
+
+    my $deploy_file_text= read_deploy_file($deploy_file_name, $skip_validity_check);
+
     if ($deploy_file_text) {
         print $deploy_file_text, ( $deploy_file_text && -t STDOUT ) ? "\n" : "";
         exit(0);
