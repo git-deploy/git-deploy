@@ -90,6 +90,7 @@ sub get_log_handle {
     return \*STDOUT if SKIP_LOGGING;
     if (!$LOG_HANDLE) {
         if (!defined $LOG_FILE) {
+            require Git::Deploy;
             my $log_dir = Git::Deploy::log_directory();
             $LOG_FILE= $log_dir . "/git-deploy.log";
         }
