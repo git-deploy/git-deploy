@@ -26,7 +26,7 @@ BEGIN {
         $path_to_gd = readlink $path_to_gd;
     }
     my $git_deploy_dir = dirname($path_to_gd);
-    $GIT_DEPLOY_LIB = catdir($git_deploy_dir, 'lib');
+    $GIT_DEPLOY_LIB = catdir($git_deploy_dir, '..', 'lib');
 
     # we set this up so that it's always in PERL5LIB when hooks execute
     $ENV{PERL5LIB} .= ":" if $ENV{PERL5LIB};
