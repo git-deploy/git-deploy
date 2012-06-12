@@ -1413,6 +1413,7 @@ sub execute_deploy_hooks {
         or return;
 
     local $ENV{GIT_DEPLOY_PHASE}      = $phase;
+    local $ENV{GIT_DEPLOY_PREFIX}     = $prefix;
 
     # the tag information, if provided
     local $ENV{GIT_DEPLOY_START_TAG}  = $args{start_tag} if defined $args{start_tag};

@@ -1820,11 +1820,33 @@ F<deploy/apps/{common,$app}/$phase.*> hooks and execute them in
 C<sort> order, first the C<common> hooks and then the C<$app> specific
 hooks. Note that the hooks B<MUST> have their executable bit set.
 
-The current phase can be obtained by inspecting the environment variable
-$GIT_DEPLOY_PHASE (e.g. 'post-pull', 'pre-sync').
+=head2 Environment variables available to hooks
 
-The current hook prefix can be obtained by inspecting the environment variable
-$GIT_DEPLOY_HOOK_PREFIX (e.g. 'common', 'sheep').
+The following environment variables are available to the phase hooks:
+
+=head3 GIT_DEPLOY_PHASE
+
+The current hook phase, e.g. "post-pull", "pre-sync" etc.
+
+=head3 GIT_DEPLOY_PREFIX
+
+The prefix of the current environment, e.g. "sheep", "cron" etc.
+
+=head3 GIT_DEPLOY_HOOK_PREFIX
+
+The prefix of the currently executing hook, like L</GIT_DEPLOY_PREFIX>
+except this will be "common" when the "common" hooks are being
+executed.
+
+=head3 GIT_DEPLOY_START_TAG
+
+Set to the tag we started with, currently only set (and can only ever
+be set) for a subset of the hooks.
+
+=head3 GIT_DEPLOY_ROLLOUT_TAG
+
+The tag we're rolling out, like L</GIT_DEPLOY_START_TAG> this isn't
+set for all hooks.
 
 =head2 Available phase hooks
 
