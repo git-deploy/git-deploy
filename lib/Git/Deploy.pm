@@ -21,7 +21,7 @@ our @EXPORT= qw(
     $DEBUG
     $SKIP_HOOKS
     $VERBOSE
-  
+
     check_if_working_dir_is_clean
     check_for_unpushed_commits
     clear_ref_info
@@ -829,7 +829,7 @@ sub print_refs {
     my $filtered= 0;
     $start= time;
 
-    _info "Filtering list by m/^$opts->{prefix}/"
+    _info "Filtering list by m/^$opts->{prefix}-[0-9]+/"
         . (
         $opts->{prefix} eq '.'
         ? "\n"
@@ -848,14 +848,14 @@ sub print_refs {
 
     my $last_sha1= "";
     foreach my $name_idx (0..$#$array) {
-	my $name= $array->[$name_idx];
+    my $name= $array->[$name_idx];
         next if ref $name;
         ++$filtered and next
-            if $opts->{prefix} and $name !~ m/^$opts->{prefix}/;
+            if $opts->{prefix} and $name !~ m/^$opts->{prefix}-[0-9]+/;
         last if $opts->{count} and $opts->{count} < ++$count;
 
-	my $next_name= $array->[ $name_idx + 1 ];
-	my $next_sha1= $next_name ? get_commit_for_name($next_name) : "";
+    my $next_name= $array->[ $name_idx + 1 ];
+    my $next_sha1= $next_name ? get_commit_for_name($next_name) : "";
         my $sha1= get_commit_for_name($name);
 
         if ( $opts->{tag_only} ) {
@@ -867,8 +867,8 @@ sub print_refs {
                 # next if $sha1 eq $head;
                 push @printed, $name;
             }
-	    my $tags_for_commit= $seen_sha1{$sha1};
-	    pop @$tags_for_commit;
+        my $tags_for_commit= $seen_sha1{$sha1};
+        pop @$tags_for_commit;
 
             _printf "%s%s%s %1s%s: %-25s%s%s%s\n",
                 @printed ? sprintf( "%4d.\t", 0 + @printed ) : "",
@@ -878,11 +878,11 @@ sub print_refs {
                 $type{$name},
                 $name,
                 @$tags_for_commit ? " ==\t" . join("\t",reverse @$tags_for_commit) : '',
-		#$last_sha1 eq $next_sha1 ? " ***PROBABLY BAD***" : # XXX this doesnt work so leave it disabled for now
-		"",
+        #$last_sha1 eq $next_sha1 ? " ***PROBABLY BAD***" : # XXX this doesnt work so leave it disabled for now
+        "",
                 color('reset'),
                 ;
-	    $last_sha1= $sha1;
+        $last_sha1= $sha1;
         }
     }
     if ( @$array and @$array > $count ) {
