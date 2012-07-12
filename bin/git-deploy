@@ -551,8 +551,13 @@ if ( $action eq 'status' ) {
     my $status= read_rollout_status();
     my $exit_val= 0;
     if ( !$start_tag || !$status ) {
-        _say "No $prefix deployment currently in progress\n";
-        $exit_val= 0;
+        if (my $message= check_rollouts_blocked($force,"no_die")) {
+            _say $message;
+            $exit_val= 3;
+        } else {
+            _say "No $prefix deployment currently in progress\n";
+            $exit_val= 0;
+        }
     }
     elsif ( !$rollout_tag ) {
         _say "$prefix rollout started - not synced yet ($start_tag)\n";
@@ -637,7 +642,7 @@ if ($check_clean) {
 }
 
 if ( $make_tag or $action eq 'tag' ) {
-    _die "You aren't allowed to make tags for the prefix '$prefix'"
+    _die "You aren't allowed to make tags for the prefix '$prefix' (can-make-tags is 'false')"
         unless get_config_bool("can-make-tags",'false');
     if ( !@message and $action eq 'tag' ) {
         if ( $prefix =~ /^(\w+?)_?prt$/ ) {

@@ -24,6 +24,7 @@ our @EXPORT= qw(
 
     check_if_working_dir_is_clean
     check_for_unpushed_commits
+    check_rollouts_blocked
     clear_ref_info
     fetch
     fetch_tag_info
@@ -1085,7 +1086,20 @@ BEGIN {
     }
 
 
-
+    sub check_rollouts_blocked {
+        my ($force,$no_die)= @_;
+        my $sysadmin_lock= get_config_path('block-file','');
+        if ($sysadmin_lock and -e $sysadmin_lock and !$force) {
+            my $msg= _slurp($sysadmin_lock);
+            $msg= "Rollout blockfile '$sysadmin_lock' exists, cannot rollout!\n"
+               . $msg;
+            if ($no_die) {
+                return $msg;
+            } else {
+                _die $msg;
+            }
+        }
+    }
     # write_rollout_status($dir,$status,$force,$other_checks)
     #
     # $dir is the directory to write the file to, a string.
@@ -1125,12 +1139,7 @@ BEGIN {
             };
 
         if ( $status eq 'start' ) {
-            my $sysadmin_lock= get_config_path('block-file','');
-            if ($sysadmin_lock and -e $sysadmin_lock) {
-                my $msg= _slurp($sysadmin_lock);
-                _die "Sysadmin rollout lockfile '$sysadmin_lock' is preventing this rollout\n"
-                   . $msg;
-            }
+            check_rollouts_blocked($force);
             mkdir $lock_dir
                 or do {
                 my $message= "You may not start a new rollout as it looks like one is already in progress!\n"
