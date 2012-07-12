@@ -619,7 +619,7 @@ out two repositories, F</repo/code> and F</repo/static_assets>:
             restrict-umask = 0002
 
             ;; If this file exists all rollouts are blocked
-            rollouts-blocked = /etc/ROLLOUTS_BLOCKED
+            block-file = /etc/ROLLOUTS_BLOCKED
 
             ;; E-Mail addresses to complain to when stuff goes wrong
             support-email = admins@example.com, infrastructure@example.com
