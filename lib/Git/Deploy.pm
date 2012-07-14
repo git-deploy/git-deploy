@@ -221,6 +221,8 @@ sub _get_config {
                     }
                 } elsif ($error_code == 2) {
                     _die "Bad config, multiple entries from $cmd: $res";
+                } elsif ($error_code == 255) {
+                    _die "Bad config value, maybe change '_' to '-'?";
                 } elsif ($error_code) {
                     _die "Got unexpected error code $error_code from $cmd: $res";
                 } elsif ( $res =~ m/\A\s*`\s*(.*)\s*`\s*\z/ ) {
@@ -997,12 +999,12 @@ BEGIN {
     # One thing to keep in mind is that the tool is going to invoked multiple times
     # with differing steps in between.
 
-    # The basic idea is we maintain a "lock" file whose presence tells others that
-    # they cannot do a rollout, and whose contents can be used to ensure a specific
-    # order of actions is followed, and which can be used as an advisory to others
-    # about the status, who is performing it and etc.
-    my $lockdirname= "deploy";
-    my $lockfilename= "lock";
+    # The basic idea is we maintain a "lock" directory, and within it a file whose
+    # presence tells others that they cannot do a rollout, and whose contents can
+    # be used to ensure a specific order of actions is followed, and which can be
+    # used as an advisory to others about the status, who is performing it and etc.
+    my $lockdirname= "git-deploy";
+    my $lockfilename= "lock-state";
 
     # additonally we maintain a file per rollout and start tag
     # these files only existing during a rollout and are erased afterwards
@@ -1010,13 +1012,19 @@ BEGIN {
 
     # utility sub, returns the lock_directory and the lockfilename for other subs
     # with some standard checking.
+    my $lock_dir;
     sub _rollout_lock_dir_and_file {
-        _die "panic: directory '$gitdir' must exist for a rollout lock step to occur"
-            if !-d $gitdir;
-        my $lock_dir= "$gitdir/$lockdirname";
+        if (!$lock_dir) {
+            my $lock_dir_root= get_config("lock-dir-root","");
+            if (!$lock_dir_root) {
+                _die "panic: directory '$gitdir' must exist for a rollout lock step to occur"
+                    if !-d $gitdir;
+                $lock_dir_root= $gitdir;
+            }
+            $lock_dir= "$lock_dir_root/$lockdirname";
+        }
         return ( $lock_dir, "$lock_dir/$lockfilename" );
     }
-
 
     # write the details of a tag into a file so it can be accessed by a later
     # step of the process

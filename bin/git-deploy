@@ -1709,6 +1709,14 @@ The strategy we'll use to detect the current repository
 name. Currently only C<dot-git-parent-dir> is supported. See the
 L</EXAMPLE CONFIGURATION> for how this is used.
 
+=head3 deploy.lock-dir-root
+
+Normally git-deploy tucks its lock file and reference data away in
+the .git directory of the repo being deployed. It can be useful to
+specify a common place for multiple repositories to share for this
+purpose, providing an "interlock" behaviour that prevents more than
+one of the repositories being rolled out at once.
+
 =head1 EXAMPLE CONFIGURATION
 
 Here's an example git-deploy configuration that can deal with rolling
