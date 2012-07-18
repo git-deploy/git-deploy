@@ -684,7 +684,7 @@ while (@actions) {
     my $rollout_tag= fetch_tag_info( 'rollout' );
     my ( $subject, $body );
     my $start_time= time;
-    _info "Starting step '$action' at ", strftime("%Y-%m-%d %H-%M-%S",localtime($start_time)),"\n";
+    _info "Starting step '$action' at ", strftime("%Y-%m-%d %H:%M:%S",localtime($start_time)),"\n";
     push_timings("gdt_action_$action");
 
 ######################################################
