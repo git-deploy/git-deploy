@@ -333,6 +333,12 @@ sub _checktag {
     }
 }
 
+sub do_fetch {
+    my ($remote_site)= @_;
+    fetch_tags( $remote_site );
+    fetch( $remote_site, undef );
+}
+
 
 ###################################################################################
 # main routine -- read options and do stuff
@@ -608,10 +614,6 @@ if ( !$prefix ) {
 }
 
 
-# always fetch info before anything else
-fetch_tags( $remote_site );
-fetch( $remote_site, undef );
-
 if ( $list || $show_tag ) {
     my $head_refs= do_get_name_list( $ignore_older_than, $list, $list_all, $include_branches );
 
@@ -642,6 +644,7 @@ if ($check_clean) {
 }
 
 if ( $make_tag or $action eq 'tag' ) {
+    do_fetch($remote_site);
     _die "You aren't allowed to make tags for the prefix '$prefix' (can-make-tags is 'false')"
         unless get_config_bool("can-make-tags",'false');
     if ( !@message and $action eq 'tag' ) {
@@ -702,6 +705,7 @@ while (@actions) {
                     prefix  => $prefix,
                 );
             } );    # this will die if there is a problem
+        do_fetch($remote_site);
 
         # $list_all is always false here.
         ($start_tag)= @{ do_get_name_list( $ignore_older_than, $list, $list_all, $include_branches ) };
@@ -839,6 +843,7 @@ while (@actions) {
                     start_tag => $start_tag,
                 );
             } );
+        do_fetch($remote_site);
 
         if ( !@message ) {
             push @message, "rollout of $prefix ($start_tag..%TAG)";
@@ -947,7 +952,7 @@ while (@actions) {
             );
         }
         else {
-
+            do_fetch($remote_site);
             # they did sync it
             my $new_start_tag;
             if ( !@message ) {

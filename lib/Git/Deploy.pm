@@ -1096,11 +1096,19 @@ BEGIN {
 
     sub check_rollouts_blocked {
         my ($force,$no_die)= @_;
-        my $sysadmin_lock= get_config_path('block-file','');
-        if ($sysadmin_lock and -e $sysadmin_lock and !$force) {
-            my $msg= _slurp($sysadmin_lock);
-            $msg= "Rollout blockfile '$sysadmin_lock' exists, cannot rollout!\n"
-               . $msg;
+        my $msg= "";
+        $msg ||= get_config('block-reason','');
+        if ($msg) {
+            $msg= "Rollouts locally blocked: $msg\nUse `git config --unset deploy.block-reason` to unblock.";
+        } elsif (my $sysadmin_lock= get_config_path('block-file','')) {
+            if ($sysadmin_lock and -e $sysadmin_lock and !$force) {
+                $msg= _slurp($sysadmin_lock);
+
+                $msg= "Rollout blockfile '$sysadmin_lock' exists, cannot rollout!\n"
+                   . $msg;
+            }
+        }
+        if ($msg) {
             if ($no_die) {
                 return $msg;
             } else {
