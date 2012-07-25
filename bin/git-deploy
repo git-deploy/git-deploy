@@ -218,6 +218,9 @@ sub do_interactive_revert {
               . "We will revert to the code previously rolled out as tag $printed[$input-1]\n\n"
               . "NOTE that a new tag will be generated for the code when it is synchronzied.\n\n";
 
+    # If we get time someday we should make this happen after the revert is complete, and get the
+    # user to enter in why they did a revert. But for now we wont, as every second during a revert
+    # is precious. -- Yves
     my $revert_tag= make_dated_tag( $prefix, $date_fmt . "_reverted", $$rsubject, $$rmessage )
                     or _warn "Failed to create revert tag! This shouldn't happen! Ignoring, but this should be fixed!\n";
     _tell("Marked $printed[0] as reverted with tag $revert_tag");
