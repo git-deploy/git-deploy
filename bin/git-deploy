@@ -219,7 +219,7 @@ sub do_interactive_revert {
               . "NOTE that a new tag will be generated for the code when it is synchronzied.\n\n";
 
     my $revert_tag= make_dated_tag( $prefix, $date_fmt . "_reverted", $$rsubject, $$rmessage )
-                    or _die "Failed to create revert tag!\n";
+                    or _warn "Failed to create revert tag! This shouldn't happen! Ignoring, but this should be fixed!\n";
     _tell("Marked $printed[0] as reverted with tag $revert_tag");
 
     reset_to_name( $printed[ $input - 1 ], $prefix );
