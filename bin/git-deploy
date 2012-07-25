@@ -169,7 +169,7 @@ sub do_get_name_list {
 }
 
 sub do_interactive_revert {
-    my ( $list_count, $prefix, $action, $ignore_older_than, $include_branches, $deploy_file_name, $message, $rsubject, $rmessage, $revert_choice  )=
+    my ( $list_count, $prefix, $action, $ignore_older_than, $include_branches, $deploy_file_name, $message, $rsubject, $rmessage, $revert_choice, $date_fmt  )=
         @_;
     my $tags= do_get_name_list( $ignore_older_than, 1, 1, $include_branches );
     _print colored( ['bold cyan'], "The following commits are available to revert the site to:" ), "\n";
@@ -217,6 +217,10 @@ sub do_interactive_revert {
               . "The live tag that we are reverting from is: $printed[0]\n\n"
               . "We will revert to the code previously rolled out as tag $printed[$input-1]\n\n"
               . "NOTE that a new tag will be generated for the code when it is synchronzied.\n\n";
+
+    my $revert_tag= make_dated_tag( $prefix, $date_fmt . "_reverted", $$rsubject, $$rmessage )
+                    or _die "Failed to create revert tag!\n";
+    _tell("Marked $printed[0] as reverted with tag $revert_tag");
 
     reset_to_name( $printed[ $input - 1 ], $prefix );
     my $sync_hook= get_sync_hook( $prefix );
@@ -745,7 +749,7 @@ while (@actions) {
             );
             push @actions,
                 do_interactive_revert( $list_count, $prefix, $action, $ignore_older_than, $include_branches,
-                    $deploy_file_name, \@message, \$subject, \$body, $revert_choice );
+                    $deploy_file_name, \@message, \$subject, \$body, $revert_choice, $date_fmt );
             $first_line= "\nRevert procedure has started. You should now be checked out to the chosen commit.\n";
         }
         elsif ( $action eq 'start' ) {
