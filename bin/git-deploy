@@ -527,6 +527,10 @@ if ($show_hook_dir) {
 }
 if ($show_deploy_file) {
     $deploy_file_name ||= get_deploy_file_name();
+    if ($start_tag) {
+        _warn "Rollout in progress. The deploy file <$deploy_file_name> is not valid.\n";
+        exit(1);
+    }
     my $deploy_file_text= read_deploy_file($deploy_file_name);
     if ($deploy_file_text) {
         print $deploy_file_text, ( $deploy_file_text && -t STDOUT ) ? "\n" : "";
