@@ -1403,7 +1403,7 @@ sub process_deploy_hooks {
         if $VERBOSE > 1;
 
     my $appdir= "$hook_dir/apps/$appname";
-    my @checks= sort glob "$appdir/$phase.*";
+    my @checks= sort grep { !/\.bak\z/ and !/~\z/ } glob "$appdir/$phase.*";
     if ( !@checks ) {
         _info "No '$phase' hooks found '$appdir' ", -e $appdir ? "is empty." : "does not exist.", "\n" if $DEBUG;
         return;
