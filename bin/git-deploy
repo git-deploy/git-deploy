@@ -866,7 +866,7 @@ while (@actions) {
 
         $subject= "Syncing $prefix to $rollout_tag from $host (replacing $start_tag)";
 
-        my $shortlog_cmd= qq(git rev-list --pretty=short "$start_tag..$rollout_tag") . qq( | git shortlog);
+        my $shortlog_cmd= qq(git shortlog --format='%h %s' $start_tag..$rollout_tag);
         my $diff_cmd= qq(git diff --stat $start_tag..$rollout_tag);
         $body=
               "$subject\n\n"
