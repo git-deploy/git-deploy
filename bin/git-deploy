@@ -44,7 +44,7 @@ local $SIG{__DIE__} = sub {
     print STDERR "@_";
     push_timings("gdt_end");
     write_timings();
-    exit 1;
+    die;
 };
 use Git::Deploy::Say;
 use Git::Deploy;
