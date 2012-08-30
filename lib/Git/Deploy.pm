@@ -187,6 +187,19 @@ sub _get_config {
     } elsif ( $setting !~ m/\./ )  {
         $setting= "$config_prefix.$setting";
     }
+
+    if ( $setting eq 'user.name' ) {
+        if ( my $name = $ENV{GIT_AUTHOR_NAME} ) {
+            return $name;
+        }
+    }
+
+    if ( $setting eq 'user.email' ) {
+        if ( my $email = $ENV{GIT_AUTHOR_EMAIL} ) {
+            return $email;
+        }
+    }
+
     unless ( exists $config{$setting}{$opts} ) {
         # If we have a $config_file specified and we are looking for a $config_prefix 
         # config item we will want to look first in the config file, and only then look 
@@ -239,6 +252,7 @@ sub _get_config {
             }
         }
     }
+
     return $config{$setting}{$opts};
 }
 
