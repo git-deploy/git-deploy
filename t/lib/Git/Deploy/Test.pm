@@ -48,10 +48,7 @@ sub git_deploy_test {
     my ($name, $test) = @_;
 
     my $cwd = getcwd();
-    chomp(my $short_git_dir = `git rev-parse --git-dir`);
-    my $git_dir = catdir($cwd, $short_git_dir);
     my $ctx = {
-        git_dir    => $git_dir,
         git_deploy => "$^X -I$cwd/git-deploy-lib $cwd/bin/git-deploy",
     };
 
@@ -68,8 +65,15 @@ sub git_deploy_test {
         $ctx->{out_dir} = $out_dir;
 
         # Can we copy the git dir?
-        ok(-d $git_dir, "The <$git_dir> exists");
-        _system "git clone --bare $ctx->{git_dir} swamp-1 >/dev/null 2>&1";
+        _system <<'SETUP_TEST_REPOSITORY';
+            (
+                git init swamp-1 &&
+                cd swamp-1 &&
+                echo "A git-deploy test repository" >README &&
+                git add README &&
+                git commit -m"A git-deploy test commit" README
+            ) 2>&1
+SETUP_TEST_REPOSITORY
         _system "git clone --bare swamp-1 swamp-2 >/dev/null 2>&1";
         _system "git clone swamp-2 swamp-3 >/dev/null 2>&1";
         ok(-d $_, "We created $_") for qw(swamp-1 swamp-2 swamp-3);

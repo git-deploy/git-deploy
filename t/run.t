@@ -101,8 +101,8 @@ git_deploy_test(
             "We finished the start step",
         );
         # Make a new local commit
-        _system "echo CHANGES >README.pod";
-        _system qq[git commit -m"This is a commit message" README.pod];
+        _system "echo CHANGES >README";
+        _system qq[git commit -m"This is a commit message" README];
         # It's going to be shown by "log"
         _run_git_deploy(
             $ctx,
