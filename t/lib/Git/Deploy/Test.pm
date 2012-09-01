@@ -61,7 +61,10 @@ sub git_deploy_test {
         # Dir with temporary output
         my $out_dir = catdir($dir, 'output');
         _mkdir $out_dir;
-        ok(-d $out_dir, "The output directory $out_dir was created");
+        # Dir with our logs
+        my $log_dir = catdir($dir, 'log');
+        _mkdir $log_dir;
+        ok(-d $_, "The directory $_ was created") for $out_dir, $log_dir;
         $ctx->{out_dir} = $out_dir;
 
         # Can we copy the git dir?
@@ -83,6 +86,7 @@ SETUP_TEST_REPOSITORY
         # Set some custom configuration
         _system "echo .deploy >>.git/info/exclude";
         _system "git config deploy.tag-prefix debug";
+        _system "git config deploy.log-directory $log_dir";
 
         # Run the user's tests
         $test->($ctx);
