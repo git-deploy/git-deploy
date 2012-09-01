@@ -41,7 +41,6 @@ our @EXPORT = qw(
 
     color
     colored
-    get_log_handle
     $LOG_HANDLE
 );
 
@@ -87,7 +86,7 @@ use constant $ENV{WHITE_BACKGROUND}
 
 use constant SKIP_LOGGING => $ENV{GIT_DEPLOY_SAY_SKIP_LOGGING};
 
-sub get_log_handle {
+sub _get_log_handle {
     return \*STDOUT if SKIP_LOGGING;
     if (!$LOG_HANDLE) {
         if (!defined $LOG_FILE) {
@@ -112,7 +111,7 @@ sub __log {
     $str=~s/\033\[[^m]+m//g;          # strip color
     $str=~s/^#([^:]+):/$pfx $1:/mg; # fix prefix
     $str=~s/\n*\z/\n/;
-    my $fh= get_log_handle();
+    my $fh= _get_log_handle();
     print $fh $str;
 }
 
