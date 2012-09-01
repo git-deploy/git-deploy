@@ -6,8 +6,6 @@
 use strict;
 use warnings;
 
-our $VERSION= '5.00';
-
 use Getopt::Long qw(GetOptions);
 use Pod::Usage qw(pod2usage);
 use Cwd qw(cwd abs_path);
@@ -440,7 +438,7 @@ GetOptions(
     'v|verbose+' => \( $VERBOSE= ($ENV{GIT_DEPLOY_VERBOSE} || 0) ),
     'help|?'     => \( my $help ),
     'man'        => \( my $man ),
-    'V|version'  => sub { print "$0 v$VERSION\n"; exit },
+    'V|version'  => sub { print "$0 v" . ($Git::Deploy::VERSION || "Git") . "\n"; exit },
 ) or pod2usage(2);
 pod2usage(1) if $help;
 pod2usage( -exitstatus => 0, -verbose => 2 ) if $man;
