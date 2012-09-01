@@ -87,7 +87,7 @@ use constant $ENV{WHITE_BACKGROUND}
 use constant SKIP_LOGGING => $ENV{GIT_DEPLOY_SAY_SKIP_LOGGING};
 
 sub _get_log_handle {
-    return \*STDOUT if SKIP_LOGGING;
+    return if SKIP_LOGGING;
 
     require Git::Deploy;
     my $log_dir  = Git::Deploy::log_directory();
