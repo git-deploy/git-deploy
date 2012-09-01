@@ -696,7 +696,6 @@ sub make_tag {
     # the space after the -m is *required* on cyan
     my $message_opt= join " ", map { s/%TAG/$tag_name/g; "-m '$_'" } @_;
 
-    #my $cmd= "git tag $message_opt $tag_name";
     my $cmd= "git tag $message_opt $tag_name";
     my $error= `$cmd 2>&1`;
     _die "failed to create tag $tag_name\n$error"
