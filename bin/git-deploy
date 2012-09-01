@@ -1575,7 +1575,7 @@ beforehand. Then you cherry-pick some commit/s:
 
     git cherry-pick SHA1_OF_HOTFIX
 
-Run the command below, and it will print a new SHA1. Please take note of that <NEW_SHA1>:
+...and make a note of the resulting <NEW_SHA1>:
 
     git --no-pager log -1 --pretty=%H
 
@@ -1594,17 +1594,11 @@ want to roll out, so do:
     git checkout -f
 
 This will ensure that you are on your hotfix commit, and that any git hooks are
-executed.
-
-If you are rolling out templates, please make sure you run concat
-
-You should then TEST the code.
-
-If you are rolling out Perl code, then you have to run
+executed. You should then TEST the code. On a webserver this normally involves
 
     httpd restart
 
-You have to do some manual testing of the relevant web site before proceeding to make sure the change is there and you are not breaking anything.
+followed by some manual testing of the relevant web site.
 
 When you are satisfied that things are OK, you can execute the sync:
 
