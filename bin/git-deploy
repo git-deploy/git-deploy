@@ -1581,7 +1581,7 @@ beforehand. Then you cherry-pick some commit/s:
 
 Then do a:
 
-    git pull
+    git pull --no-rebase
 
 Followed by:
 
