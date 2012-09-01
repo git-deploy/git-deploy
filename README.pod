@@ -460,7 +460,7 @@ beforehand. Then you cherry-pick some commit/s:
 
 Then do a:
 
-    git pull
+    git pull --no-rebase
 
 Followed by:
 
@@ -598,6 +598,14 @@ The strategy we'll use to detect the current repository
 name. Currently only C<dot-git-parent-dir> is supported. See the
 L</EXAMPLE CONFIGURATION> for how this is used.
 
+=head3 deploy.lock-dir-root
+
+Normally git-deploy tucks its lock file and reference data away in
+the .git directory of the repo being deployed. It can be useful to
+specify a common place for multiple repositories to share for this
+purpose, providing an "interlock" behaviour that prevents more than
+one of the repositories being rolled out at once.
+
 =head1 EXAMPLE CONFIGURATION
 
 Here's an example git-deploy configuration that can deal with rolling
@@ -720,11 +728,33 @@ F<deploy/apps/{common,$app}/$phase.*> hooks and execute them in
 C<sort> order, first the C<common> hooks and then the C<$app> specific
 hooks. Note that the hooks B<MUST> have their executable bit set.
 
-The current phase can be obtained by inspecting the environment variable
-$GIT_DEPLOY_PHASE (e.g. 'post-pull', 'pre-sync').
+=head2 Environment variables available to hooks
 
-The current hook prefix can be obtained by inspecting the environment variable
-$GIT_DEPLOY_HOOK_PREFIX (e.g. 'common', 'sheep').
+The following environment variables are available to the phase hooks:
+
+=head3 GIT_DEPLOY_PHASE
+
+The current hook phase, e.g. "post-pull", "pre-sync" etc.
+
+=head3 GIT_DEPLOY_PREFIX
+
+The prefix of the current environment, e.g. "sheep", "cron" etc.
+
+=head3 GIT_DEPLOY_HOOK_PREFIX
+
+The prefix of the currently executing hook, like L</GIT_DEPLOY_PREFIX>
+except this will be "common" when the "common" hooks are being
+executed.
+
+=head3 GIT_DEPLOY_START_TAG
+
+Set to the tag we started with, currently only set (and can only ever
+be set) for a subset of the hooks.
+
+=head3 GIT_DEPLOY_ROLLOUT_TAG
+
+The tag we're rolling out, like L</GIT_DEPLOY_START_TAG> this isn't
+set for all hooks.
 
 =head2 Available phase hooks
 
@@ -756,6 +786,10 @@ F<deploy/sync/$app.sync> hook.
 
 After we've synced. Here you could e.g. send custom e-mails indicating
 that the deployment was a success.
+
+=head3 post-abort
+
+Hooks executed after an C<abort>.
 
 =head3 post-reset
 
@@ -829,3 +863,4 @@ Note: the sync hook can be skipped (and the associated finish) with the
 manual-sync action. This will however execute the pre-sync and post-sync
 hooks, possibly with errors.
 
+=cut
