@@ -4,8 +4,8 @@ use warnings FATAL => "all";
 use Exporter 'import';
 use File::Spec::Functions qw(catfile);
 
-our ($LOG_HANDLE,$LOG_FILE);
 use POSIX 'strftime';
+use Memoize;
 
 BEGIN {
     select( ( select(STDERR), $|++ )[0] ); $|++;    # flush ALL buffers!
@@ -88,18 +88,19 @@ use constant SKIP_LOGGING => $ENV{GIT_DEPLOY_SAY_SKIP_LOGGING};
 
 sub _get_log_handle {
     return \*STDOUT if SKIP_LOGGING;
-    if (!$LOG_HANDLE) {
-        if (!defined $LOG_FILE) {
-            require Git::Deploy;
-            my $log_dir = Git::Deploy::log_directory();
-            $LOG_FILE= catfile($log_dir, 'git-deploy.log');
-        }
 
-        open $LOG_HANDLE, ">>", $LOG_FILE
-            or die "Can not append to global log file '$LOG_FILE': $!";
-    }
-    return $LOG_HANDLE;
+    require Git::Deploy;
+    my $log_dir  = Git::Deploy::log_directory();
+    my $log_file = catfile($log_dir, 'git-deploy.log');
+    open my $fh, ">>", $log_file or do {
+        warn "Can not append to global log file '$log_file': $!";
+        return;
+    };
+
+    return $fh;
 }
+memoize('_get_log_handle');
+
 # NOTE - THESE COLORS ARE CHOSEN WITH COLOR BLINDNESS IN MIND - DO NOT CHANGE THEM WITHOUT
 # VERIFYING THAT A COLOR BLIND PROGRAMMER CAN SEE THE DIFFERENCE - 10% of MEN SUFFER SOME KIND
 # OF COLOR BLINDNESS AND APPROXIMATELY 99% OF OUR CODERS ARE MEN.
@@ -115,8 +116,9 @@ sub __log {
     $str=~s/\033\[[^m]+m//g;          # strip color
     $str=~s/^#([^:]+):/$pfx $1:/mg; # fix prefix
     $str=~s/\n*\z/\n/;
-    my $fh= _get_log_handle();
-    print $fh $str;
+    if (my $fh= _get_log_handle()) {
+        print $fh $str;
+    }
 }
 
 sub __say(@) {
