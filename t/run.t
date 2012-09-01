@@ -9,10 +9,37 @@ git_deploy_test(
     "A rollout etc.",
     sub {
         my $ctx = shift;
-        _run_git_deploy(
-            $ctx,
-            args => "start",
-        );
+
+        # First test that the user.{email,name} warnings work properly
+        {
+            local $ENV{GIT_AUTHOR_NAME} = '';
+            local $ENV{GIT_AUTHOR_EMAIL} = '';
+            _system qq[git config user.$_ ""] for qw(name email);
+            _run_git_deploy(
+                $ctx,
+                args => "start",
+                wanted_exit_code => -1, # -1 = any non-zero OK
+            );
+            like(
+                `cat $ctx->{last_stderr}`,
+                qr/Please make sure you set your Git user name & E-Mail/,
+                "We should whine about an unset user name & E-Mail"
+            );
+
+            # We should support 
+            local $ENV{GIT_AUTHOR_NAME} = 'Git Deploy AUTHOR_NAME Test';
+            local $ENV{GIT_AUTHOR_EMAIL} = 'git-deploy_AUTHOR_EMAIL-test@example.com';
+            _run_git_deploy(
+                $ctx,
+                args => "start",
+            );
+            chomp(my $tag_created_on_start_due_to_no_tag_existing = qx[git tag -l]);
+            chomp(my $tag_info = qx[git show $tag_created_on_start_due_to_no_tag_existing]);
+            like($tag_info, qr/\Q$ENV{GIT_AUTHOR_NAME}\E/, "We should have created a tag with $ENV{GIT_AUTHOR_NAME} as the author");
+            like($tag_info, qr/\Q$ENV{GIT_AUTHOR_EMAIL}\E/, "We should have created a tag with $ENV{GIT_AUTHOR_EMAIL} as the author");
+            _system "git config --remove-section user";
+        }
+
         like(`git tag -l`, qr/debug/, "We created a tag because there wasn't one already");
         like(`cat $ctx->{last_stderr}`, qr/Deploy procedure has started/, "We print a notice about the deploy being started");
         like(`cat $ctx->{last_stderr}`, qr/Not sending mail on action/, "By default we don't send mail on 'start'");

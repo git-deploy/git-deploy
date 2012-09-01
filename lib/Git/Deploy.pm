@@ -39,6 +39,8 @@ our @EXPORT= qw(
     get_config_int
     get_config_path
     get_config_bool
+    get_user_name
+    get_user_email
     get_current_branch
     get_deploy_file_name
     get_ref_info
@@ -250,6 +252,9 @@ sub get_config { return _get_config("",@_) }
 sub get_config_path { return _get_config("--path",@_) }
 sub get_config_int  { return _get_config("--int",@_) }
 sub get_config_bool { return 'true' eq _get_config("--bool",@_) } 
+
+sub get_user_name  { return $ENV{GIT_AUTHOR_NAME}  || get_config("user.name", "") }
+sub get_user_email { return $ENV{GIT_AUTHOR_EMAIL} || get_config("user.email", "") }
 
 }
 
