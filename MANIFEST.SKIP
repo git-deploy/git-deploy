@@ -1,0 +1,3 @@
+# Don't include the symlink that's only there for compatibility with
+# deployments of git-deploy via git clones.
+^git-deploy$
