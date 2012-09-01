@@ -156,7 +156,7 @@ git_deploy_test(
         );
         like(`cat $ctx->{last_stderr}`, qr/debug rollout started - not synced yet/, "We note the correct status");
         # let's push our commits
-        _system "git push";
+        _system "git push 2>&1";
         # Let's sync
         _run_git_deploy(
             $ctx,
