@@ -106,6 +106,12 @@ sub init_gitdir {
 sub git_cmd {
     my $cmd= shift;
 
+    # Hack because we don't want to log in the _die, _info and _warn
+    # calls below because that'll call Git::Deploy::log_directory(),
+    # which will call Git::Deploy::_get_config() which will call us
+    # again.
+    local $Git::Deploy::Say::SKIP_LOGING_DUE_TO_DEEP_RECURSION_WITH_GIT_DEPLOY_DEBUG = 1 if $DEBUG;
+
     $cmd .= " 2>&1";
     my $res= `$cmd`;
     my $error_code= $?;

@@ -104,7 +104,11 @@ sub _get_log_handle {
 # VERIFYING THAT A COLOR BLIND PROGRAMMER CAN SEE THE DIFFERENCE - 10% of MEN SUFFER SOME KIND
 # OF COLOR BLINDNESS AND APPROXIMATELY 99% OF OUR CODERS ARE MEN.
 
+our $SKIP_LOGING_DUE_TO_DEEP_RECURSION_WITH_GIT_DEPLOY_DEBUG;
+
 sub __log {
+    return if $SKIP_LOGING_DUE_TO_DEEP_RECURSION_WITH_GIT_DEPLOY_DEBUG;
+
     my $str= join("",@_);
     my $user = $ENV{USER} || ((getpwuid($<))[0]);
     my $pfx= sprintf "# %-12s | %s #",$user,strftime("%Y-%m-%d %H:%M:%S",localtime);
