@@ -79,12 +79,12 @@ SETUP_TEST_REPOSITORY
         ok(-d $_, "We created $_") for qw(swamp-1 swamp-2 swamp-3);
 
         _chdir 'swamp-3';
+
+        # Set some custom configuration
         _system "echo .deploy >>.git/info/exclude";
-
-
-        # Run the user's tests
         _system "git config deploy.tag-prefix debug";
 
+        # Run the user's tests
         $test->($ctx);
 
         _chdir $cwd;
