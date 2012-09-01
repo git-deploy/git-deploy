@@ -2,6 +2,7 @@ package Git::Deploy::Say;
 use strict;
 use warnings FATAL => "all";
 use Exporter 'import';
+use File::Spec::Functions qw(catfile);
 
 our ($LOG_HANDLE,$LOG_FILE);
 use POSIX 'strftime';
@@ -92,7 +93,7 @@ sub get_log_handle {
         if (!defined $LOG_FILE) {
             require Git::Deploy;
             my $log_dir = Git::Deploy::log_directory();
-            $LOG_FILE= $log_dir . "/git-deploy.log";
+            $LOG_FILE= catfile($log_dir, 'git-deploy.log');
         }
 
         open $LOG_HANDLE, ">>", $LOG_FILE
