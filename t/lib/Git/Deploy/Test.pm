@@ -20,7 +20,9 @@ sub _system {
     my $raw_exit_code = system $cmd;
     my $exit_code = $raw_exit_code >> 8;
 
-    if ($exit_code != $wanted_exit_code) {
+    if ($exit_code != 0 && $wanted_exit_code == -1) {
+        pass "The command <$cmd> exited with code <$exit_code>, which is non-0 like we wanted";
+    } elsif ($exit_code != $wanted_exit_code) {
         fail "The command <$cmd> exited with <$exit_code>, but we wanted <$wanted_exit_code>: $!"
     } else {
         pass "The command <$cmd> exited with code <$exit_code> like we wanted";
