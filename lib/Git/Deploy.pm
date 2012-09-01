@@ -211,8 +211,6 @@ sub _get_config {
             foreach my $source (
                   ($config_file && $setting=~/^\Q$config_prefix\E\./) 
                   ? ("--file $config_file","") 
-                  : $setting=~/^user\./ 
-                  ? ("--global") 
                   : ("") 
             ) {
                 my $cmd= "git config $source --get $opts '$setting_internal_name'";
