@@ -1596,10 +1596,7 @@ want to roll out, so do:
 This will ensure that you are on your hotfix commit, and that any git hooks are
 executed.
 
-If you are rolling out templates, please make sure you run concat. After doing so, please run the following scripts (just paste them in the terminal and hit enter)
-
-/usr/local/git_tree/sysadmin/git-deploytool-data/deploy-affiliate_data/apps/app_tmpl/post-tree-update.002_pre_compress_content.sh
-/usr/local/git_tree/sysadmin/git-deploytool-data/deploy-affiliate_data/apps/app_tmpl/post-tree-update.099_sync_to_static_servers.sh
+If you are rolling out templates, please make sure you run concat
 
 You should then TEST the code.
 
