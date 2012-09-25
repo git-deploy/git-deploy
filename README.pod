@@ -475,7 +475,7 @@ want to roll out, so do:
 This will ensure that you are on your hotfix commit, and that any git hooks are
 executed. You should then TEST the code. On a webserver this normally involves
 
-    httpd restart
+    dude restart
 
 followed by some manual testing of the relevant web site.
 
