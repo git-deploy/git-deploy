@@ -10,13 +10,19 @@ our @EXPORT = qw(
 );
 
 sub _question {
-    my $question = "Continue anyway? [Y/n]";
+    my %opts = (
+        question => "Continue anyway? [Y/n]",
+        answer_positive => qr/^Y(?:es)?/i,
+        answer_negative => qr/^N(?:o)?/i,
+
+        @_,  # this goes last, for hobo default overriding
+    );
 
     my $term = Term::ReadLine->new($0);
-    while (defined (my $line = $term->readline("$question> "))) {
+    while (defined (my $line = $term->readline("$opts{question}> "))) {
         for ($line) {
-            if (/^Y(?:es)?/i) { return 1 }
-            elsif (/^N(?:o)?/i)  { return 0 }
+            if ( /$opts{answer_positive}/ ) { return 1 }
+            elsif ( /$opts{answer_negative}/ )  { return 0 }
             else {
                 _warn "I can't understand you, try again\n";
             }
