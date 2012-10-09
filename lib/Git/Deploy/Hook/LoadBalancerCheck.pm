@@ -26,7 +26,7 @@ sub run {
     } else {
         if ($lb_status_should_be_ok) {
             _warn "$this_box is not in the load balancer as expected, instead it is ";
-            _warn "in status '$status'. Ssomeone else may be using it for developing,";
+            _warn "in status '$status'. Someone else may be using it for developing,";
             _warn "or there may be maintenance going on on it.";
         } else {
             _error "$this_box did not go to status 'rollout' as expected and is in";
