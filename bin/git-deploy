@@ -810,8 +810,6 @@ while (@actions) {
                 ;
         }
 
-        # XXX: this is a cheap an easy way to silence the mails for this action
-        # by request of liz and the teamleaders.
 ######################################################
     }
     elsif ( $action eq 'sync' or $action eq 'release' or $action eq 'manual-sync' ) {
