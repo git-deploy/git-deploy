@@ -816,6 +816,12 @@ while (@actions) {
                 ;
         }
 
+        execute_deploy_hooks(
+            action      => $action,
+            phase       => "post-start",
+            prefix      => $prefix,
+            start_tag   => $start_tag,
+        );
 ######################################################
     }
     elsif ( $action eq 'sync' or $action eq 'release' or $action eq 'manual-sync' ) {
@@ -1902,6 +1908,12 @@ git-deploy actions:
 
 The first hook to be executed. Will be run before the deployment tag
 is created (but obviously, after we do C<git fetch>).
+
+=head3 post-start
+
+Executed after the start phase (also executed on hotfix), useful to
+e.g. print out any custom messages you'd like to print out at the end
+of the start/hotfix phase.
 
 =head3 pre-pull
 
