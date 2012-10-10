@@ -223,7 +223,7 @@ sub do_interactive_revert {
                     or _warn "Failed to create revert tag! This shouldn't happen! Ignoring, but this should be fixed!\n";
     _tell("Marked $printed[0] as reverted with tag $revert_tag");
 
-    reset_to_name( $printed[ $input - 1 ], $prefix );
+    reset_to_name( $action, $printed[ $input - 1 ], $prefix );
     my $sync_hook= get_sync_hook( $prefix );
     if ($sync_hook) {
         return "sync";                        # they have a sync hook, so call it.
@@ -708,6 +708,7 @@ while (@actions) {
 
                 # these will die if there is a problem
                 execute_deploy_hooks(
+                    action  => $action,
                     phase   => "pre-start",
                     prefix  => $prefix,
                 );
@@ -733,6 +734,7 @@ while (@actions) {
         my $first_line;
         # these will die if there is a problem
         execute_deploy_hooks(
+            action  => $action,
             phase     => "pre-pull",
             prefix    => $prefix,
             start_tag => $start_tag,
@@ -741,6 +743,7 @@ while (@actions) {
         _info `git remote prune origin`;
         if ( $action eq 'revert' ) {
             execute_log_hooks(
+                action       => $action,
                 prefix       => $prefix,
                 log_announce => 1,
                 log_level    => "info",
@@ -753,6 +756,7 @@ while (@actions) {
         }
         elsif ( $action eq 'start' ) {
             execute_log_hooks(
+                action       => $action,
                 prefix       => $prefix,
                 log_announce => 1,
                 log_level    => "info",
@@ -765,6 +769,7 @@ while (@actions) {
 
             # these will die if there is a problem
             execute_deploy_hooks(
+                action    => $action,
                 phase     => $_,
                 prefix    => $prefix,
                 start_tag => $start_tag,
@@ -777,6 +782,7 @@ while (@actions) {
         }
         elsif ( $action eq 'hotfix' ) {
             execute_log_hooks(
+                action       => $action,
                 prefix       => $prefix,
                 log_announce => 1,
                 log_level    => "info",
@@ -843,6 +849,7 @@ while (@actions) {
 
                 # these will die if there is a problem
                 execute_deploy_hooks(
+                    action  => $action,
                     phase   => "pre-sync",
                     prefix  => $prefix,
                     start_tag => $start_tag,
@@ -884,6 +891,7 @@ while (@actions) {
             ;
 
             execute_log_hooks(
+                action       => $action,
                 prefix       => $prefix,
                 log_announce => 1,
                 log_level    => "info",
@@ -911,6 +919,7 @@ while (@actions) {
             _tell "You must now hand execute the synchronization process and then execute git-deploy finish\n";
 
             execute_log_hooks(
+                action       => $action,
                 prefix       => $prefix,
                 log_announce => 1,
                 log_level    => "info",
@@ -920,6 +929,7 @@ while (@actions) {
 
         # these will die if there is a problem - should they be executed if the sync failed?
         execute_deploy_hooks(
+            action      => $action,
             phase       => "post-sync",
             prefix      => $prefix,
             start_tag   => $start_tag,
@@ -938,7 +948,7 @@ while (@actions) {
             } );
 
         _say "Rolling back to $start_tag\n";
-        reset_to_name( $start_tag, $prefix );
+        reset_to_name( $action, $start_tag, $prefix );
         my $deploy_text= "";
         if ( !$rollout_tag ) {
 
@@ -950,6 +960,7 @@ while (@actions) {
             }
             $deploy_text= write_deploy_file( $start_tag, \@message, $deploy_file_name );
             execute_log_hooks(
+                action       => $action,
                 prefix       => $prefix,
                 log_announce => 1,
                 log_level    => "info",
@@ -977,6 +988,7 @@ while (@actions) {
             if ( my $sync_hook= get_sync_hook( $prefix ) ) {
                 _info "Will automatically execute $sync_hook to update servers\n";
                 execute_log_hooks(
+                    action       => $action,
                     prefix       => $prefix,
                     log_announce => 1,
                     log_level    => "info",
@@ -998,6 +1010,7 @@ while (@actions) {
                 };
             } else {
                 execute_log_hooks(
+                    action       => $action,
                     prefix       => $prefix,
                     log_announce => 1,
                     log_level    => "warning",
@@ -1008,6 +1021,7 @@ while (@actions) {
         }
 
         execute_deploy_hooks(
+            action  => $action,
             phase   => "post-abort",
             prefix  => $prefix,
         );
@@ -1018,6 +1032,7 @@ while (@actions) {
     }
     elsif ( $action eq 'finish' ) {
         execute_log_hooks(
+            action       => $action,
             prefix       => $prefix,
             log_announce => 1,
             log_level    => "info",
@@ -1082,6 +1097,7 @@ while (@actions) {
         my $msg = "'$action' for '$prefix' had problems\n$final_words";
         _warn $msg;
         execute_log_hooks(
+            action       => $action,
             prefix       => $prefix,
             log_announce => 1,
             log_level    => "warning",
@@ -1093,6 +1109,7 @@ while (@actions) {
         $rollout_tag and $msg .= " (now at $rollout_tag)";
         _yay "$msg\n";
         execute_log_hooks(
+            action       => $action,
             prefix       => $prefix,
             log_announce => 1,
             log_level    => "info",
@@ -1846,6 +1863,10 @@ hooks. Note that the hooks B<MUST> have their executable bit set.
 =head2 Environment variables available to hooks
 
 The following environment variables are available to the phase hooks:
+
+=head3 GIT_DEPLOY_ACTION
+
+The current action we're running, e.g. "start", "hotfix", "abort" etc.
 
 =head3 GIT_DEPLOY_PHASE
 

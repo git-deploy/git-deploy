@@ -1294,7 +1294,7 @@ sub check_for_unpushed_commits {
 
 
 sub reset_to_name {
-    my ( $name, $prefix )= @_;
+    my ( $action, $name, $prefix )= @_;
     my ($rbinfo)= parse_rollout_status();
     push_timings("gdt_internal__reset_to_name__start");
     my @cmd;
@@ -1317,6 +1317,7 @@ sub reset_to_name {
     _say "Rolled back to '$name' succesfully\n";
 
     execute_deploy_hooks(
+        action  => $action,
         phase   => $_,
         prefix  => $prefix,
 
@@ -1434,6 +1435,7 @@ sub process_deploy_hooks {
 sub execute_deploy_hooks {
     my (%args) = @_;
 
+    my $action           = $args{action}           || _die "Missing action argument";
     my $phase            = $args{phase}            || _die "Missing phase argument";
     my $prefix           = $args{prefix}           || _die "Missing prefix argument";
     my $ignore_exit_code = $args{ignore_exit_code} || 0;
@@ -1441,6 +1443,7 @@ sub execute_deploy_hooks {
     my $root= get_hook_dir( $prefix )
         or return;
 
+    local $ENV{GIT_DEPLOY_ACTION}     = $action;
     local $ENV{GIT_DEPLOY_PHASE}      = $phase;
     local $ENV{GIT_DEPLOY_PREFIX}     = $prefix;
 
