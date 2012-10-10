@@ -920,9 +920,9 @@ while (@actions) {
 
         # these will die if there is a problem - should they be executed if the sync failed?
         execute_deploy_hooks(
-            phase   => "post-sync",
-            prefix  => $prefix,
-            start_tag => $start_tag,
+            phase       => "post-sync",
+            prefix      => $prefix,
+            start_tag   => $start_tag,
             rollout_tag => $rollout_tag,
         );
 ######################################################
