@@ -47,7 +47,6 @@ local $SIG{__DIE__} = sub {
 use Git::Deploy::Say;
 use Git::Deploy;
 
-
 # debugging
 use Data::Dumper qw(Dumper);
 
