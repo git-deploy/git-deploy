@@ -42,6 +42,7 @@ our @EXPORT= qw(
     get_config_bool
     get_current_branch
     get_deploy_file_name
+    get_hook_dir
     get_ref_info
     get_sha1_for_name
     get_sorted_list_of_tags
