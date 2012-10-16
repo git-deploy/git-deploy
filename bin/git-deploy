@@ -517,6 +517,7 @@ if ($show_prefix) {
         exit(1);
     }
 }
+
 if ($show_hook_dir) {
 
     if (my $hook_dir = get_hook_dir($prefix, 1)) {
@@ -528,6 +529,7 @@ if ($show_hook_dir) {
         exit(1);
     }
 }
+
 if ($show_deploy_file) {
     $deploy_file_name ||= get_deploy_file_name();
     if ($start_tag) {
@@ -560,6 +562,7 @@ if ($show_deploy_file) {
         exit(1);
     }
 }
+
 if ( $action eq 'status' ) {
     my $status= read_rollout_status();
     my $exit_val= 0;
@@ -585,6 +588,7 @@ if ( $action eq 'status' ) {
     }
     exit($exit_val);
 }
+
 my @extra= @ARGV;
 if ( $git_wrap{$action} ) {
     if ( !$start_tag ) {
@@ -597,16 +601,19 @@ if ( $git_wrap{$action} ) {
         exec( "git", $action, @extra, "$start_tag..HEAD" );
     }
 }
+
 if ( $action eq 'modified' ) {
     show_modified( $start_tag, $rollout_tag );
     exit;
 }
+
 my $revert_choice;
 if ( $action eq 'revert' ) {
     if (@ARGV) {
         $revert_choice = shift @ARGV;
     }
 }
+
 if (@ARGV) {
     pod2usage("Too many arguments.");
 }
@@ -619,7 +626,6 @@ if ( !$prefix ) {
         . "    git config deploy.tag-prefix PREFIX\n\n"
         . "to configure this repository for deployment, or provide one on the command line.\n";
 }
-
 
 if ( $list || $show_tag ) {
     my $head_refs= do_get_name_list( $ignore_older_than, $list, $list_all, $include_branches );
@@ -675,7 +681,6 @@ if ( $make_tag or $action eq 'tag' ) {
     exit(0);
 }
 
-
 ###################################################################################
 # At this point we are have been asked to do a rollout step and we are in a clean
 # working directory. Depending on which $action they request we do different things
@@ -687,6 +692,7 @@ if ( $action eq 'release' ) {
         unless get_config_bool("can-make-tags",'false');
     push @actions, "finish";
 }
+
 while (@actions) {
     my $final_words= "";    #any messages to display at the end of the rollout - distinct from yay message
     my $action= shift @actions;
