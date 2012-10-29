@@ -666,9 +666,12 @@ sub find_refs_matching_head {
 # if it is clean returns nothing.
 sub check_if_working_dir_is_clean {
     push_timings("gdt_internal__git_status__start");
-    my $status= `git status`;
+    my $status= `git status --porcelain`;
+    if ( $status ) { # something changed!
+        # Ok, that was fun, now invoke it again to generate human-friendly output.
+        $status= `git status`;
+    }
     push_timings("gdt_internal__git_status__end");
-    return if $status =~ /\(working directory clean\)/;
     return $status;
 }
 
