@@ -665,7 +665,8 @@ sub check_if_working_dir_is_clean {
     my $status= `git status --porcelain`;
     push_timings("gdt_internal__git_status__end");
     return if !$status;
-    return $status;
+    # Ok, that was fun, now invoke it again to generate human-friendly output.
+    return `git status`;
 }
 
 # make_tag($name,@message);
