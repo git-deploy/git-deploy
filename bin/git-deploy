@@ -2017,3 +2017,5 @@ manual-sync action. This will however execute the pre-sync and post-sync
 hooks, possibly with errors.
 
 =cut
+
+# vim: filetype=perl tabstop=4 shiftwidth=4 expandtab:
