@@ -704,19 +704,21 @@ while (@actions) {
 
 ######################################################
     if ( $action eq 'start' or $action eq 'revert' or $action eq 'hotfix' ) {
+
+	# these will die if there is a problem
+	execute_deploy_hooks(
+	    action  => $action,
+	    phase   => "pre-start",
+	    prefix  => $prefix,
+	);
+
         should_write_timings();
+
         write_rollout_status(
             "start", $force,
             sub {
                 _checktag( $action, 'start', $start_tag, 0 );
                 _checktag( $action, 'rollout',  $rollout_tag,  0 );
-
-                # these will die if there is a problem
-                execute_deploy_hooks(
-                    action  => $action,
-                    phase   => "pre-start",
-                    prefix  => $prefix,
-                );
             } );    # this will die if there is a problem
         do_fetch($remote_site);
 
