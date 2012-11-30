@@ -1982,4 +1982,20 @@ Note: the sync hook can be skipped (and the associated finish) with the
 manual-sync action. This will however execute the pre-sync and post-sync
 hooks, possibly with errors.
 
+=head1 DETAILS
+
+=head2 Source Code Repository
+
+git-deploy master development repository is hosted by GitHub at:
+
+    https://github.com/git-deploy/git-deploy
+
+The authors would like to thank GitHub for their support of the open source
+community.
+
+=head2 LICENSE
+
+This software is licensed under the same terms as the Perl language.
+See http://dev.perl.org/licenses/ for details.
+
 =cut
