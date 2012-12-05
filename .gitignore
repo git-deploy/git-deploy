@@ -5,3 +5,4 @@ blib/
 pm_to_blib
 .build/
 git-deploy-*
+TAGS
