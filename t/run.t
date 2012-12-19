@@ -3,7 +3,16 @@ use strict;
 use warnings;
 use lib 't/lib';
 use Git::Deploy::Test;
-use Test::More 'no_plan';
+use Test::More;
+
+{
+    my $git_version = qx[git version 2>&1];
+    if (defined $git_version and $git_version =~ /git version/) {
+        plan 'no_plan';
+    } else {
+        plan skip_all => "We don't have Git installed here";
+    }
+}
 
 git_deploy_test(
     "A rollout etc.",
