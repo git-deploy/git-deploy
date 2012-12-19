@@ -2,6 +2,8 @@ Revision history for git-deploy
 
 {{$NEXT}}
 
+6.01      2012-12-19 16:57:00 UTC
+
     - Add a post-start hook phase where we can print out custom
       messages or end the start phase (e.g. if rollouts are blocked).
 
