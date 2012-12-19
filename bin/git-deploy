@@ -259,20 +259,32 @@ sub do_sync_with_sync_hook {
 
         1;
     } or do {
-        my $support_email= get_config('support-email','maintainer');
+
+        my $sync_hook_fail_message = get_config(
+            'message-on-sync-hook-fail-whale',
+            "A) Retry the synchronization hook. You can do this by moving to the root of the repository\n" .
+            "   and executing the following command by hand:\n\n" .
+            "   \$ {SYNC_HOOK}\n\n" .
+            "   which if it succeeds can be followed with a\n\n" .
+            "   \$ git-deploy finish\n\n" .
+            "   If that doesn't work then you should seek further assistance from sysadmin.\n" .
+            "   * NOTE * This is NOT an error in git-deploy itself.\n\n" .
+            "B) Inform {SUPPORT_EMAIL} of the failure and any relevant\n" .
+            "   output there might be. Please do this even if the manual process works out.\n\n"
+        );
+        _expand_template_variables(
+            \$sync_hook_fail_message,
+            {
+                SYNC_HOOK => $sync_hook,
+                SUPPORT_EMAIL => get_config('support-email','maintainer'),
+            }
+        );
+
         _tell
             "The syncronization hook has returned failure: $@\n\n",
             "                         *** DON'T PANIC ***\n\n",
-            "You will now be dropped into 'manual' sync mode. In most cases of failure you should:\n\n",
-            "A) Retry the synchronization hook. You can do this by moving to the root of the repository\n",
-            "   and executing the following command by hand:\n\n",
-            "   \$ $sync_hook\n\n",
-            "   which if it succeeds can be followed with a\n\n",
-            "   \$ git-deploy finish\n\n",
-            "   If that doesn't work then you should seek further assistance from sysadmin.\n",
-            "   * NOTE * This is NOT an error in git-deploy itself.\n\n",
-            "B) Inform $support_email of the failure and any relevant\n",
-            "   output there might be. Please do this even if the manual process works out.\n\n";
+            "You will now be dropped into 'manual' sync mode. Please follow these instructions:\n\n",
+            $sync_hook_fail_message;
 
         if ($disable_further_actions_if_not_ok) {
             # disable any further actions as requested.
@@ -1752,6 +1764,16 @@ the .git directory of the repo being deployed. It can be useful to
 specify a common place for multiple repositories to share for this
 purpose, providing an "interlock" behaviour that prevents more than
 one of the repositories being rolled out at once.
+
+=head3 deploy.message-on-sync-hook-fail-whale
+
+A message you can specify which'll be output when we fail to run the
+sync hook instead of the default message. You can put any
+site-specific instructions here to replace the defaults.
+
+The strings C<{SYNC_HOOK}> and C<{SUPPORT_EMAIL}> in that message will
+be replaced with the sync hook that was run and the support E-Mail
+specified in L</deploy.support-email>.
 
 =head1 EXAMPLE CONFIGURATION
 

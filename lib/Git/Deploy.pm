@@ -78,6 +78,8 @@ our @EXPORT= qw(
     init_gitdir
     log_directory
     reset_to_name
+
+    _expand_template_variables
 );
 
 our $DEBUG = $ENV{GIT_DEPLOY_DEBUG} || 0;
@@ -994,6 +996,15 @@ sub _slurp {
         local $/;
         return <$fh>;
     }
+}
+
+sub _expand_template_variables {
+    my ($message_ref, $variables) = @_;
+
+    while (my ($tag, $string) = each %$variables) {
+        $$message_ref =~ s/\{$tag\}/$string/g;
+    }
+    return;
 }
 
 BEGIN {
