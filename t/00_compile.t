@@ -10,12 +10,3 @@ use_ok $_ for qw(
     Git::Deploy::Hook
     Git::Deploy
 );
-
-use_ok $_ for qw(
-    Git::Deploy::Hook::CheckPermissions
-    Git::Deploy::Hook::ConfigtestHTTPD
-    Git::Deploy::Hook::RestartHTTPD
-    Git::Deploy::Hook::ControlLoadBalancer
-    Git::Deploy::Hook::NobranchRollout
-    Git::Deploy::Hook::LoadBalancerCheck
-);
