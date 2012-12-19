@@ -606,6 +606,16 @@ specify a common place for multiple repositories to share for this
 purpose, providing an "interlock" behaviour that prevents more than
 one of the repositories being rolled out at once.
 
+=head3 deploy.message-on-sync-hook-fail-whale
+
+A message you can specify which'll be output when we fail to run the
+sync hook instead of the default message. You can put any
+site-specific instructions here to replace the defaults.
+
+The strings C<{SYNC_HOOK}> and C<{SUPPORT_EMAIL}> in that message will
+be replaced with the sync hook that was run and the support E-Mail
+specified in L</deploy.support-email>.
+
 =head1 EXAMPLE CONFIGURATION
 
 Here's an example git-deploy configuration that can deal with rolling
@@ -732,6 +742,10 @@ hooks. Note that the hooks B<MUST> have their executable bit set.
 
 The following environment variables are available to the phase hooks:
 
+=head3 GIT_DEPLOY_ACTION
+
+The current action we're running, e.g. "start", "hotfix", "abort" etc.
+
 =head3 GIT_DEPLOY_PHASE
 
 The current hook phase, e.g. "post-pull", "pre-sync" etc.
@@ -766,6 +780,12 @@ git-deploy actions:
 
 The first hook to be executed. Will be run before the deployment tag
 is created (but obviously, after we do C<git fetch>).
+
+=head3 post-start
+
+Executed after the start phase (also executed on hotfix), useful to
+e.g. print out any custom messages you'd like to print out at the end
+of the start/hotfix phase.
 
 =head3 pre-pull
 
@@ -864,3 +884,5 @@ manual-sync action. This will however execute the pre-sync and post-sync
 hooks, possibly with errors.
 
 =cut
+
+# vim: filetype=perl tabstop=4 shiftwidth=4 expandtab:
