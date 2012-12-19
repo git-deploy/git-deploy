@@ -2,6 +2,26 @@ Revision history for git-deploy
 
 {{$NEXT}}
 
+    - Add a post-start hook phase where we can print out custom
+      messages or end the start phase (e.g. if rollouts are blocked).
+
+    - Pass GIT_DEPLOY_ACTION to hooks so hooks can see what action
+      started something.
+
+    - Removed Booking.com specific Git::Deploy::Hook::* code.
+
+    - Add where to get the source to the POD and be explicit about
+      what license git-deploy is under.
+
+    - Fixed an issue where we'd die when trying to print out an error
+      on invalid refs.
+
+    - Add facility to emit custom error messages on sync hook failure
+      by setting deploy.message-on-sync-hook-fail-whale in the config.
+
+    - Skip tests (instead of failing) on platforms that don't have Git
+      installed.
+
 6.00      2012-09-01 18:46:48 UTC
 
     - Initial CPAN version
