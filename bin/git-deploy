@@ -213,7 +213,7 @@ sub do_interactive_revert {
     $$rmessage= "$ENV{USER} has instructed git-deploy to begin an automated revert of $prefix.\n\n"
               . "The live tag that we are reverting from is: $printed[0]\n\n"
               . "We will revert to the code previously rolled out as tag $printed[$input-1]\n\n"
-              . "NOTE that a new tag will be generated for the code when it is synchronzied.\n\n";
+              . "NOTE that a new tag will be generated for the code when it is synchronized.\n\n";
 
     # If we get time someday we should make this happen after the revert is complete, and get the
     # user to enter in why they did a revert. But for now we wont, as every second during a revert
