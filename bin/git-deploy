@@ -166,7 +166,7 @@ sub do_get_name_list {
 }
 
 sub do_interactive_revert {
-    my ( $list_count, $prefix, $action, $ignore_older_than, $include_branches, $deploy_file_name, $message, $rsubject, $rmessage, $revert_choice, $date_fmt  )=
+    my ( $list_count, $prefix, $action, $ignore_older_than, $include_branches, $deploy_file_name, $message, $rsubject, $rmessage, $revert_choice, $date_fmt, $remote_site  )=
         @_;
     my $tags= do_get_name_list( $ignore_older_than, 1, 1, $include_branches );
     _print colored( ['bold cyan'], "The following commits are available to revert the site to:" ), "\n";
@@ -220,6 +220,7 @@ sub do_interactive_revert {
     # is precious. -- Yves
     my $revert_tag= make_dated_tag( $prefix, $date_fmt . "_reverted", $$rsubject, $$rmessage )
                     or _warn "Failed to create revert tag! This shouldn't happen! Ignoring, but this should be fixed!\n";
+    push_tag( $remote_site, $revert_tag );
     _tell("Marked $printed[0] as reverted with tag $revert_tag");
 
     reset_to_name( $action, $printed[ $input - 1 ], $prefix );
@@ -749,6 +750,7 @@ while (@actions) {
             }
             $start_tag= make_dated_tag( $prefix, $date_fmt, @message )
                 or _die "Failed to create tag!\n";
+            push_tag( $remote_site, $start_tag );
         }
         store_tag_info( 'start', $start_tag );
         my $sha1= get_commit_for_name($start_tag);
@@ -772,7 +774,7 @@ while (@actions) {
             );
             push @actions,
                 do_interactive_revert( $list_count, $prefix, $action, $ignore_older_than, $include_branches,
-                    $deploy_file_name, \@message, \$subject, \$body, $revert_choice, $date_fmt );
+                    $deploy_file_name, \@message, \$subject, \$body, $revert_choice, $date_fmt, $remote_site );
             $first_line= "\nRevert procedure has started. You should now be checked out to the chosen commit.\n";
         }
         elsif ( $action eq 'start' ) {
@@ -889,6 +891,7 @@ while (@actions) {
         }
         $rollout_tag= make_dated_tag( $prefix, $date_fmt, @message )
             or _die "Failed to create tag!\n";
+        push_tag( $remote_site, $rollout_tag );
         store_tag_info( 'rollout', $rollout_tag );
         my $deploy_text= write_deploy_file( $rollout_tag, \@message, $deploy_file_name );
 
@@ -1003,6 +1006,7 @@ while (@actions) {
             }
             $new_start_tag= make_dated_tag( $prefix, $date_fmt, @message )
                 or _die "Failed to create tag!\n";
+            push_tag( $remote_site, $new_start_tag );
             $deploy_text= write_deploy_file( $new_start_tag, \@message, $deploy_file_name );
 
             $subject= "Rollout of $rollout_tag has been aborted, rolled back to $start_tag!";
