@@ -719,12 +719,12 @@ while (@actions) {
 ######################################################
     if ( $action eq 'start' or $action eq 'revert' or $action eq 'hotfix' ) {
 
-	# these will die if there is a problem
-	execute_deploy_hooks(
-	    action  => $action,
-	    phase   => "pre-start",
-	    prefix  => $prefix,
-	);
+        # these will die if there is a problem
+        execute_deploy_hooks(
+            action  => $action,
+            phase   => "pre-start",
+            prefix  => $prefix,
+        );
 
         should_write_timings();
 
