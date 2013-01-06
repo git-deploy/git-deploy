@@ -5,12 +5,12 @@ use Exporter 'import';
 use Time::HiRes;
 
 our @EXPORT = qw(
+    init_timings
     push_timings
     should_write_timings
-    write_timings
 );
 
-our (@timings, $write_timings, @real_argv);
+our (@timings, $write_timings, @real_argv, $enabled, $log_directory);
 BEGIN {
     # @timings is a set of 4-tuples: [ $tag, $time_stamp, $time_since_last_step, $time_since_start_tag ]
     @timings= (
@@ -24,6 +24,11 @@ BEGIN {
     # if this is true then we will write a timings file at process conclusion
     $write_timings= 0;
     @real_argv= @ARGV;
+}
+
+sub init_timings {
+    $enabled= shift;
+    $log_directory= shift;
 }
 
 sub should_write_timings {
@@ -47,13 +52,10 @@ sub push_timings {
 }
 
 sub write_timings {
-    return unless $write_timings;
-    # Do we even have to write the timing data?
-    require Git::Deploy;
-    return unless Git::Deploy::get_config_bool("log-timing-data",'false');
+    return unless $enabled && $write_timings;
+
     # Where do we write it?
-    my $log_directory;
-    unless ( $log_directory = Git::Deploy::log_directory() ) {
+    unless ( $log_directory ) {
         warn "Not writing timing data: 'log_directory' has not been configured.";
         return;
     }
@@ -70,5 +72,17 @@ sub write_timings {
     }
     close $fh;
 }
+
+END {
+    # Note! Nothing called in here should shell out, or in any way change $?
+    # this means call anything that might use system() or `` or qx().
+    # See perldoc perlvar and read the docs on $?.
+    eval {
+        push_timings("gdt_end");
+        write_timings();
+        1;
+    } or warn "Failed to write timings: $@";
+}
+
 
 1;

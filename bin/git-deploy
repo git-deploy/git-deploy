@@ -36,14 +36,7 @@ use lib $GIT_DEPLOY_LIB;
 use Git::Deploy::Timing qw(
     push_timings
     should_write_timings
-    write_timings
 );
-local $SIG{__DIE__} = sub {
-    print STDERR "@_";
-    push_timings("gdt_end");
-    write_timings();
-    die;
-};
 use Git::Deploy::Say;
 use Git::Deploy;
 
@@ -103,7 +96,7 @@ sub do_pre_checks {
     push_timings("gdt_internal__do_pre_checks__start");
 
     if ( my $unclean_status= check_if_working_dir_is_clean() ) {
-        _die "working directory not clean. git status reports:\n" . $unclean_status;
+        _fatal_exit 1, "working directory not clean. git status reports:\n" . $unclean_status;
     }
 
     # check that we are actually on a branch
@@ -113,7 +106,7 @@ sub do_pre_checks {
             "Checking if this commit is on any branches -- this may take a minute\n";
         my @branches= what_branches_can_reach_head();
         if ( !@branches ) {
-            _die "The current commit is not reachable from any branch tip\n",
+            _fatal_exit 1, "The current commit is not reachable from any branch tip\n",
                 "This probably means someone committed a change against an old commit\n",
                 "You should probably do something like:\n\n",
                 "\tgit checkout -b temporary_branch HEAD\n",
@@ -123,7 +116,7 @@ sub do_pre_checks {
                 "However you should investigate what changes were involved before doing so\n";
         }
         else {
-            _die join( "\n\t", "The current checkout is on the following branches:", @branches ),
+            _fatal_exit 1, join( "\n\t", "The current checkout is on the following branches:", @branches ),
                 "\n",
                 "This most likely means that someone has checked out an old commit\n",
                 "and you need to do:\n",
@@ -449,7 +442,7 @@ GetOptions(
     'v|verbose+' => \( $VERBOSE= ($ENV{GIT_DEPLOY_VERBOSE} || 0) ),
     'help|?'     => \( my $help ),
     'man'        => \( my $man ),
-    'V|version'  => sub { print "$0 v" . ($Git::Deploy::VERSION || "Git") . "\n"; exit },
+    'V|version'  => sub { print "$0 v" . ($Git::Deploy::VERSION || "Git") . "\n"; exit(0); },
 ) or pod2usage(2);
 pod2usage(1) if $help;
 pod2usage( -exitstatus => 0, -verbose => 2 ) if $man;
@@ -493,7 +486,7 @@ init_gitdir();
 if (defined(my $require= get_config_int("restrict-umask",undef))) {
     my $umask= umask;
     if ( $umask != $require ) {
-        _die sprintf( "Your umask is not set properly; got %04o instead of %04o\n", $umask, $require);
+        _fatal_exit 17, sprintf( "Your umask is not set properly; got %04o instead of %04o\n", $umask, $require);
     }
 }
 
@@ -605,7 +598,8 @@ if ( $action eq 'status' ) {
 my @extra= @ARGV;
 if ( $git_wrap{$action} ) {
     if ( !$start_tag ) {
-        exit;
+        _warn "Not in rollout session. Maybe you meant to use git and not git-deploy?";
+        exit(1);
     }
     elsif ($rollout_tag) {
         exec( "git", $action, @extra, "$rollout_tag..$start_tag" );
@@ -617,7 +611,7 @@ if ( $git_wrap{$action} ) {
 
 if ( $action eq 'modified' ) {
     show_modified( $start_tag, $rollout_tag );
-    exit;
+    exit(0);
 }
 
 my $revert_choice;
@@ -634,7 +628,7 @@ if (@ARGV) {
 # we want this before actions are handled. but not for show_actions that
 # dont involve looking at the git tree.
 if ( !$prefix ) {
-    _die "It appears you have not specified a tag prefix and it is not configured either.\n"
+    _fatal_exit 19, "It appears you have not specified a tag prefix and it is not configured either.\n"
         . "You can use:\n\n"
         . "    git config deploy.tag-prefix PREFIX\n\n"
         . "to configure this repository for deployment, or provide one on the command line.\n";
@@ -657,7 +651,7 @@ if ( $list || $show_tag ) {
 }
 
 if (!$force and (!get_config("user.name","") or !get_config("user.email",""))) {
-    _die  "Please make sure you execute:\n\n"
+    _fatal_exit 17,  "Please make sure you execute:\n\n"
         . "    git config --global user.name 'Your Name'\n"
         . "    git config --global user.email 'email\@host.com'\n"
         . "\n"
@@ -671,7 +665,7 @@ if ($check_clean) {
 
 if ( $make_tag or $action eq 'tag' ) {
     do_fetch($remote_site);
-    _die "You aren't allowed to make tags for the prefix '$prefix' (can-make-tags is 'false')"
+    _fatal_exit 1, "You aren't allowed to make tags for the prefix '$prefix' (can-make-tags is 'false')"
         unless get_config_bool("can-make-tags",'false');
     if ( !@message and $action eq 'tag' ) {
         if ( $prefix =~ /^(\w+?)_?prt$/ ) {
@@ -681,7 +675,7 @@ if ( $make_tag or $action eq 'tag' ) {
             push @message, "Working tag for '$prefix'\n";
         }
     }
-    _die "Message is not optional with --make-tag" unless @message;
+    _fatal_exit 1, "Message is not optional with --make-tag" unless @message;
     my $tag= make_dated_tag( $prefix, $date_fmt, @message )
         or _die "Failed to create tag!\n";
     if ( $action eq 'tag' ) {
@@ -862,7 +856,7 @@ while (@actions) {
                         _warn "--force enabling rolling out same thing you had when you started\n";
                     }
                     else {
-                        _die "It seems like there is nothing to $action\n",
+                        _fatal_exit 1 => "It seems like there is nothing to $action\n",
                             "The commit for HEAD ($commit_for_HEAD)\n",
                             "Is the same as the start commit ($commit_for_start, tag $start_tag)\n",
                             "\n",
@@ -1149,9 +1143,6 @@ while (@actions) {
 # and push any tags that might have been created
 push_timings("gdt_push_tags");
 push_tags( $remote_site );
-
-push_timings("gdt_end");
-write_timings();
 
 exit(0);
 
