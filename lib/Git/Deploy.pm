@@ -1158,6 +1158,7 @@ BEGIN {
         my $status= shift;
         my $force= shift;
         my $other_checks= shift;
+        my $return_fh= shift;
 
         my ( $lock_dir, $lock_file )= _rollout_lock_dir_and_file();
 
@@ -1230,6 +1231,11 @@ BEGIN {
                     $somethings_wrong->("Can't $status in the current state:");
                 }
             }
+            if ( $status eq 'push-hotfix' ) {
+                if ( @file != 1 ) {
+                    $somethings_wrong->("Can't $status once you have sync'ed");
+                }
+            }
             if ( $file[0] !~ /\t\Q$ENV{USER}\E$/ ) {
                 $somethings_wrong->("Someone else is doing a rollout. You cannot proceed.");
             }
@@ -1241,6 +1247,9 @@ BEGIN {
         flock( $out_fh, LOCK_EX | LOCK_NB )
             or _die "Failed to lock file:$!\nSomebody already rolling out?\n";
         $other_checks->();
+
+        return $out_fh if $return_fh;
+
         my $status_line= join(
             "\t",
             "$status:",    # must be first
