@@ -1097,6 +1097,26 @@ while (@actions) {
         ######################################################
         _say "Looks like you are all done! Have a nice day.";
     }
+    elsif ( $action eq 'push-hotfix' ) {
+        # get a lock while we work.
+        my $fh= write_rollout_status(
+            $action, $force,
+            sub {
+                _checktag( $action, 'push-hotfix', $start_tag, 1 );
+            }, "return_fh" );
+        my $sha1= get_commit_for_name('HEAD');
+        my $ok= eval {
+            pull($remote_site);
+            push_remote($remote_site);
+            1;
+        };
+        reset_to_name($action, $sha1, $prefix);
+        if ($ok) {
+            _say "Merged code with upstream and pushed. You should be able to sync now.";
+        } else {
+            _warn "Failed to merge and push. You might need to rerun this command.";
+        }
+    }
     else {
         _die "panic: unhanded \$action: $action\n";
     }
