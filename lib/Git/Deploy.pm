@@ -668,7 +668,7 @@ sub check_if_working_dir_is_clean {
     push_timings("gdt_internal__git_status__start");
     my $status= `git status`;
     push_timings("gdt_internal__git_status__end");
-    return if $status =~ /working directory clean/;
+    return if $status =~ /\(working directory clean\)/;
     return $status;
 }
 
