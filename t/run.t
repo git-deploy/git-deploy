@@ -18,6 +18,7 @@ git_deploy_test(
     "A rollout etc.",
     sub {
         my $ctx = shift;
+        local $Test::Builder::Level = $Test::Builder::Level + 1;
         _run_git_deploy(
             $ctx,
             args => "start",

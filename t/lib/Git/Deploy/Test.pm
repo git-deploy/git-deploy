@@ -111,6 +111,8 @@ sub _run_git_deploy {
     my ($ctx, %args) = @_;
     my $wanted_exit_code = $args{wanted_exit_code} || 0;
 
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+
     my $out_dir = $ctx->{out_dir};
     $ctx->{"last_$_"} = catfile($out_dir, "last_$_") for qw(stdout stderr);
     _system "$ctx->{git_deploy} $args{args} >$ctx->{last_stdout} 2>$ctx->{last_stderr}", $wanted_exit_code;

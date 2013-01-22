@@ -21,6 +21,7 @@ BEGIN {
 our @EXPORT = qw(
     _error
     _die
+    _fatal_exit
     _warn
     _info
     _say
@@ -161,6 +162,15 @@ sub _die(@) {
     __log($msg);
     chomp $msg;
     die colored([COLOR_DIE], $msg), "\n";
+}
+
+sub _fatal_exit(@) {
+    my $code= shift;
+    my $msg= _msg( "# FATAL:", @_ );
+    __log($msg);
+    chomp $msg;
+    warn colored([COLOR_DIE], $msg), "\n";
+    exit($code);
 }
 
 sub _error(@) {

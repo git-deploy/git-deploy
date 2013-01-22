@@ -11,7 +11,7 @@ use Sys::Hostname qw(hostname);
 use Fcntl qw(:DEFAULT :flock);
 use Cwd qw(cwd abs_path);
 use File::Spec::Functions qw(catdir);
-use Git::Deploy::Timing qw(push_timings);
+use Git::Deploy::Timing qw(push_timings init_timings);
 use Git::Deploy::Say;
 use Data::Dumper;
 
@@ -103,6 +103,9 @@ sub init_gitdir {
     # place regardless of where the tool was run from).
     chdir "$gitdir/.."
         or _die "Failed to chdir to root of git working tree:'$gitdir/..': $!";
+
+    init_timings(get_config_bool("log-timing-data",'false'), log_directory());
+
     return $gitdir;
 }
 
@@ -666,9 +669,12 @@ sub find_refs_matching_head {
 # if it is clean returns nothing.
 sub check_if_working_dir_is_clean {
     push_timings("gdt_internal__git_status__start");
-    my $status= `git status`;
+    my $status= `git status --porcelain`;
+    if ( $status ) { # something changed!
+        # Ok, that was fun, now invoke it again to generate human-friendly output.
+        $status= `git status`;
+    }
     push_timings("gdt_internal__git_status__end");
-    return if $status =~ /\(working directory clean\)/;
     return $status;
 }
 
@@ -1301,7 +1307,7 @@ sub check_for_unpushed_commits {
         }
     }
     push_timings("gdt_internal__check_for_unpushed_commits__end");
-    _die "Will not proceed.\n" if @cherry and !$force;
+    _fatal_exit 1, "Will not proceed.\n" if @cherry and !$force;
     return 0;
 }
 
@@ -1497,5 +1503,6 @@ sub log_directory {
     return unless $log_directory;
     return $log_directory;
 }
+
 
 1;
