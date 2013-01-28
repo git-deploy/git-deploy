@@ -46,6 +46,7 @@ our @EXPORT = qw(
 );
 
 sub _msg {
+    # don't call _die() in here
     my ( $pfx, @bits )= @_;
     my $msg= join "", @bits;
     $msg =~ s/\n*\z/\n/;
@@ -156,12 +157,26 @@ sub _confess(@) {
     die colored [COLOR_CONFESS], $msg;
 }    # very bad
 
-sub _die(@) {
-    # very bad
-    my $msg= _msg( "# FATAL:", @_ );
-    __log($msg);
-    chomp $msg;
-    die colored([COLOR_DIE], $msg), "\n";
+{
+    my($already_in_die, @errors);
+    sub _die(@) {
+        # very bad
+        my $msg= _msg( "# FATAL:", @_ );
+        push @errors, $msg;
+        if ( ! $already_in_die++ ) {
+            __log($msg);
+        }
+        else {
+            $msg = join "\n",
+                        "_die() called itself due to an error in __log().",
+                        "This output will not be logged (screen only).",
+                        "The errors collected so far:\n",
+                        @errors,
+                    ;
+        }
+        chomp $msg;
+        die colored([COLOR_DIE], $msg), "\n";
+    }
 }
 
 sub _fatal_exit(@) {
