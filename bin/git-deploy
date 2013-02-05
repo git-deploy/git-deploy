@@ -1968,12 +1968,16 @@ tag name we've just created.
 
 =head3 post-sync
 
-After we've synced. Here you could e.g. send custom e-mails indicating
-that the deployment was a success.
+After we've finished the sync phase.
 
 Note, this'll currently run even on failure. See
 L<https://github.com/git-deploy/git-deploy/issues/27> for an issue
 filed for that.
+
+=head3 post-finish
+
+Run on finish. Here you could e.g. send custom e-mails indicating that
+the deployment was a success.
 
 =head3 post-abort
 
