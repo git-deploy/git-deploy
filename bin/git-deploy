@@ -886,13 +886,6 @@ while (@actions) {
         store_tag_info( 'rollout', $rollout_tag );
         my $deploy_text= write_deploy_file( $rollout_tag, \@message, $deploy_file_name );
 
-        # Post tags hooks
-        execute_deploy_hooks(
-            action      => $action,
-            phase       => "post-tag",
-            prefix      => $prefix,
-        );
-
         $subject= "Syncing $prefix to $rollout_tag from $host (replacing $start_tag)";
 
         my $shortlog_cmd= qq(git shortlog --format='%h %s' $start_tag..$rollout_tag);
