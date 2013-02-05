@@ -1971,6 +1971,10 @@ tag name we've just created.
 After we've synced. Here you could e.g. send custom e-mails indicating
 that the deployment was a success.
 
+Note, this'll currently run even on failure. See
+L<https://github.com/git-deploy/git-deploy/issues/27> for an issue
+filed for that.
+
 =head3 post-abort
 
 Hooks executed after an C<abort>.
