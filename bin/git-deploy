@@ -159,7 +159,7 @@ sub do_get_name_list {
 }
 
 sub do_interactive_revert {
-    my ( $list_count, $prefix, $action, $ignore_older_than, $include_branches, $deploy_file_name, $message, $rsubject, $rmessage, $revert_choice, $date_fmt  )=
+    my ( $remote_site, $list_count, $prefix, $action, $ignore_older_than, $include_branches, $deploy_file_name, $message, $rsubject, $rmessage, $revert_choice, $date_fmt  )=
         @_;
     my $tags= do_get_name_list( $ignore_older_than, 1, 1, $include_branches );
     _print colored( ['bold cyan'], "The following commits are available to revert the site to:" ), "\n";
@@ -765,7 +765,7 @@ while (@actions) {
                 log_message  => "Starting revert of '$prefix' from $start_tag"
             );
             push @actions,
-                do_interactive_revert( $list_count, $prefix, $action, $ignore_older_than, $include_branches,
+                do_interactive_revert( $remote_site, $list_count, $prefix, $action, $ignore_older_than, $include_branches,
                     $deploy_file_name, \@message, \$subject, \$body, $revert_choice, $date_fmt );
             $first_line= "\nRevert procedure has started. You should now be checked out to the chosen commit.\n";
         }
