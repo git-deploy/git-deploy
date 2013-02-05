@@ -682,7 +682,6 @@ if ( $make_tag or $action eq 'tag' ) {
 
         # and push any tags that might have been created
         write_deploy_file( $tag, \@message, $deploy_file_name );
-        push_tag( $remote_site, $tag );
     }
     print "$tag\n";
     exit(0);
