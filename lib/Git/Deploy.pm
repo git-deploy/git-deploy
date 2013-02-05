@@ -741,7 +741,7 @@ sub _make_dated_tag {
 sub make_and_push_dated_tag {
     my $remote_site= shift;
     my $tag= _make_dated_tag(@_);
-    push_tags($remote_site);
+    push_tag($remote_site, $tag);
     return $tag;
 }
 
