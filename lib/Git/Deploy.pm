@@ -51,6 +51,7 @@ our @EXPORT= qw(
     git_errorcode
     git_result
     is_name_annotated_tag
+    make_and_push_dated_tag
     make_dated_tag
     make_tag
     parse_rollout_status
@@ -738,6 +739,13 @@ sub make_dated_tag {
     return make_tag( $tag_name, @_ );
 }
 
+sub make_and_push_dated_tag {
+    my $remote_site= shift;
+    my $tag= make_dated_tag(@_);
+    push_tags($remote_site);
+    return $tag;
+}
+
 # preform an action against a remote site.
 sub remote {
     my ( $action, $remote_site, $remote_branch )= @_;
@@ -803,7 +811,7 @@ sub fetch {
 # pull a branch from a remote site.
 sub pull {
     my ( $remote_site, $remote_branch )= @_;
-    remote( "pull", $remote_site, $remote_branch );
+    remote( "pull --no-rebase", $remote_site, $remote_branch );
 }
 
 # push a branch to a remote site.

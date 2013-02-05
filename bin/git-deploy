@@ -211,7 +211,7 @@ sub do_interactive_revert {
     # If we get time someday we should make this happen after the revert is complete, and get the
     # user to enter in why they did a revert. But for now we wont, as every second during a revert
     # is precious. -- Yves
-    my $revert_tag= make_dated_tag( $prefix, $date_fmt . "_reverted", $$rsubject, $$rmessage )
+    my $revert_tag= make_and_push_dated_tag( $remote_site, $prefix, $date_fmt . "_reverted", $$rsubject, $$rmessage )
                     or _warn "Failed to create revert tag! This shouldn't happen! Ignoring, but this should be fixed!\n";
     _tell("Marked $printed[0] as reverted with tag $revert_tag");
 
@@ -676,7 +676,7 @@ if ( $make_tag or $action eq 'tag' ) {
         }
     }
     _fatal_exit 1, "Message is not optional with --make-tag" unless @message;
-    my $tag= make_dated_tag( $prefix, $date_fmt, @message )
+    my $tag= make_and_push_dated_tag( $remote_site, $prefix, $date_fmt, @message )
         or _die "Failed to create tag!\n";
     if ( $action eq 'tag' ) {
 
@@ -741,7 +741,7 @@ while (@actions) {
             if ( !@message ) {
                 push @message, "tagged as restore point if you abort deployment procedure for $prefix";
             }
-            $start_tag= make_dated_tag( $prefix, $date_fmt, @message )
+            $start_tag= make_and_push_dated_tag( $remote_site, $prefix, $date_fmt, @message )
                 or _die "Failed to create tag!\n";
         }
         store_tag_info( 'start', $start_tag );
@@ -881,7 +881,7 @@ while (@actions) {
         if ( !@message ) {
             push @message, "rollout of $prefix ($start_tag..%TAG)";
         }
-        $rollout_tag= make_dated_tag( $prefix, $date_fmt, @message )
+        $rollout_tag= make_and_push_dated_tag( $remote_site, $prefix, $date_fmt, @message )
             or _die "Failed to create tag!\n";
         store_tag_info( 'rollout', $rollout_tag );
         my $deploy_text= write_deploy_file( $rollout_tag, \@message, $deploy_file_name );
@@ -1002,7 +1002,7 @@ while (@actions) {
             if ( !@message ) {
                 push @message, "Aborted rollout of $rollout_tag, rolled back to $start_tag";
             }
-            $new_start_tag= make_dated_tag( $prefix, $date_fmt, @message )
+            $new_start_tag= make_and_push_dated_tag( $remote_site, $prefix, $date_fmt, @message )
                 or _die "Failed to create tag!\n";
             $deploy_text= write_deploy_file( $new_start_tag, \@message, $deploy_file_name );
 
