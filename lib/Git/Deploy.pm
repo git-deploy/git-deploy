@@ -52,7 +52,6 @@ our @EXPORT= qw(
     git_result
     is_name_annotated_tag
     make_and_push_dated_tag
-    make_dated_tag
     make_tag
     parse_rollout_status
     print_refs
@@ -722,14 +721,14 @@ sub make_tag {
 }
 
 
-# make_dated_tag($prefix,$date_fmt,@message);
+# _make_dated_tag($prefix,$date_fmt,@message);
 #
 # @message will be in place modified such that %TAG is replaced by the
 # new tagname.
 #
 # returns the new tagname.
 #
-sub make_dated_tag {
+sub _make_dated_tag {
     my $prefix= shift;
     my $date_fmt= shift;
 
@@ -741,7 +740,7 @@ sub make_dated_tag {
 
 sub make_and_push_dated_tag {
     my $remote_site= shift;
-    my $tag= make_dated_tag(@_);
+    my $tag= _make_dated_tag(@_);
     push_tags($remote_site);
     return $tag;
 }
