@@ -1093,6 +1093,13 @@ while (@actions) {
         _info "Packing references for speedup next time";
         _info `git pack-refs`;
 
+        # Post finish hooks
+        execute_deploy_hooks(
+            action      => $action,
+            phase       => "post-finish",
+            prefix      => $prefix,
+        );
+
         # XXX: this is a cheap an easy way to silence the mails for this action
         # by request of liz and the teamleaders.
         ######################################################
