@@ -720,27 +720,16 @@ sub make_tag {
     return $tag_name;
 }
 
-
-# _make_dated_tag($prefix,$date_fmt,@message);
-#
-# @message will be in place modified such that %TAG is replaced by the
-# new tagname.
-#
-# returns the new tagname.
-#
-sub _make_dated_tag {
+sub make_and_push_dated_tag {
+    my $remote_site= shift;
     my $prefix= shift;
     my $date_fmt= shift;
 
-    #my @message= @_; # except that we actually modify @_ in place
     my $date= strftime $date_fmt, localtime;
     my $tag_name= "$prefix-$date";
-    return make_tag( $tag_name, @_ );
-}
+    my @message = @_;
 
-sub make_and_push_dated_tag {
-    my $remote_site= shift;
-    my $tag= _make_dated_tag(@_);
+    my $tag= make_tag($tag_name, @message);
     push_tag($remote_site, $tag);
     return $tag;
 }
