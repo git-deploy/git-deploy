@@ -721,6 +721,7 @@ sub make_tag {
 }
 
 sub make_and_push_dated_tag {
+    my $action= shift;
     my $remote_site= shift;
     my $prefix= shift;
     my $date_fmt= shift;
@@ -730,6 +731,14 @@ sub make_and_push_dated_tag {
     my @message = @_;
 
     my $tag= make_tag($tag_name, @message);
+
+    execute_deploy_hooks(
+        action      => $action,
+        phase       => "post-tag",
+        prefix      => $prefix,
+        rollout_tag => $tag,
+    );
+
     push_tag($remote_site, $tag);
     return $tag;
 }
