@@ -802,10 +802,26 @@ Just after the pull in the "start" phase.
 Just before we create the tag we're about to sync out and execute the
 F<deploy/sync/$app.sync> hook.
 
+=head3 post-tag
+
+Run right after we've created and are about to push a tag.
+
+Useful for e.g. updating some foreign system saying that we're trying
+to rollout this tag. Will have L</GIT_DEPLOY_ROLLOUT_TAG> set with the
+tag name we've just created.
+
 =head3 post-sync
 
-After we've synced. Here you could e.g. send custom e-mails indicating
-that the deployment was a success.
+After we've finished the sync phase.
+
+Note, this'll currently run even on failure. See
+L<https://github.com/git-deploy/git-deploy/issues/27> for an issue
+filed for that.
+
+=head3 post-finish
+
+Run on finish. Here you could e.g. send custom e-mails indicating that
+the deployment was a success.
 
 =head3 post-abort
 
@@ -882,6 +898,22 @@ each C<$app>, and it's located in F<deploy-$repo/sync/$app.sync>.
 Note: the sync hook can be skipped (and the associated finish) with the
 manual-sync action. This will however execute the pre-sync and post-sync
 hooks, possibly with errors.
+
+=head1 DETAILS
+
+=head2 Source Code Repository
+
+git-deploy master development repository is hosted by GitHub at:
+
+    https://github.com/git-deploy/git-deploy
+
+The authors would like to thank GitHub for their support of the open source
+community.
+
+=head2 LICENSE
+
+This software is licensed under the same terms as the Perl language.
+See http://dev.perl.org/licenses/ for details.
 
 =cut
 
