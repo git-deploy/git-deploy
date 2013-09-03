@@ -125,7 +125,7 @@ rollout itself are B<completely up to you> (see L</Sync Hooks>). You can use
 everything from git itself to carrier pigeons, git-deploy doesn't care.
 
 If the sync hook fails (e.g. because a cat ate your pigeon)
-git-deploy exits with an error and expects to you fix the situation.
+git-deploy exits with an error and expects you to fix the situation.
 
 Usually fixing it is a combination of running the sync hook manually
 again, and making a mental note to beat your sysadmins with a
