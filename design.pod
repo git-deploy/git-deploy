@@ -42,6 +42,6 @@ be able to "reach" a rolled out commit from git via git-log. It is possible
 that this is too restrictive and that it needs to be reconsidered, but it
 does make life easier as a dev.
 
-=back 4
+=back
 
 
