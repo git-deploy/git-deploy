@@ -1,0 +1,58 @@
+=pod
+
+=head1 Basics and Setup
+
+=head2 git deploy init
+
+What would C<git deploy init> do?
+
+=head1 Workflow
+
+=head2 general
+
+The general workflow for deployment should follow
+
+ git deploy start
+ 
+ git deploy sync
+ 
+ git deploy finish
+
+=head2 hotfix
+
+Time to fix a minor bug caused by two lines of code.
+
+=head2 revert
+
+Time to back up the truck...
+
+=head1 Aliases
+
+It can be useful to include aliases to deploy to specific environments. This is
+achieved using the default behaviour of git config and can be placed in any file
+that git processes.
+
+ [alias]
+    prod = deploy --remote-site production --remote-branch master
+    test = deploy --remote-site testsuite --remote-branch master
+    uat  = deploy --remote-site useraccept --remote-branch master
+
+Assuming the upstream copies are referenced. i.e. remotes have been added thus:
+
+ git remote add production git://production/var/www
+ git remote add testsuite git://test0001/var/www
+ git remote add useraccept git://uat0001/var/www
+
+The usual alias expansion would now apply so that
+
+ git prod start
+
+would expand to 
+
+ git deploy --remote-site production --remote-branch master
+
+=head1 Examples
+
+
+
+=cut
