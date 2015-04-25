@@ -115,7 +115,7 @@ sub _run_git_deploy {
 
     my $out_dir = $ctx->{out_dir};
     $ctx->{"last_$_"} = catfile($out_dir, "last_$_") for qw(stdout stderr);
-    _system "$ctx->{git_deploy} $args{args} >$ctx->{last_stdout} 2>$ctx->{last_stderr}", $wanted_exit_code;
+    _system "LC_ALL=C $ctx->{git_deploy} $args{args} >$ctx->{last_stdout} 2>$ctx->{last_stderr}", $wanted_exit_code;
 
     # Print out any fail we had on stderr that isn't debug output
     _system "grep -v ^# $ctx->{last_stderr} 1>&2 || :";
