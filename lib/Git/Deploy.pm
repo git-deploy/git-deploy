@@ -41,6 +41,8 @@ our @EXPORT= qw(
     get_config_int
     get_config_path
     get_config_bool
+    get_user_name
+    get_user_email
     get_current_branch
     get_deploy_file_name
     get_hook_dir
@@ -258,6 +260,34 @@ sub get_config { return _get_config("",@_) }
 sub get_config_path { return _get_config("--path",@_) }
 sub get_config_int  { return _get_config("--int",@_) }
 sub get_config_bool { return 'true' eq _get_config("--bool",@_) } 
+
+sub get_user_name  {
+    if ( my $author = $ENV{GIT_AUTHOR_NAME} ) {
+        my $committer = $ENV{GIT_COMMITTER_NAME};
+
+        if ( $author ne $committer ) {
+            _warn 'GIT_AUTHOR_NAME and GIT_COMMITTER_NAME are set but do not match!';
+            _warn 'Falling back to user.name';
+        } else {
+            return $author;
+        }
+    }
+    return get_config('user.name', '');
+}
+
+sub get_user_email  {
+    if ( my $author = $ENV{GIT_AUTHOR_EMAIL} ) {
+        my $committer = $ENV{GIT_COMMITTER_EMAIL};
+
+        if ( $author ne $committer ) {
+            _warn 'GIT_AUTHOR_EMAIL and GIT_COMMITTER_EMAIL are set but do not match!';
+            _warn 'Falling back to user.email';
+        } else {
+            return $author;
+        }
+    }
+    return get_config('user.email', '');
+}
 
 }
 
